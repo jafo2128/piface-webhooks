@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ex
 #
 # Wrapper to install piface-webhooks with puppet.
 #

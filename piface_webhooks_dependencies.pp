@@ -41,14 +41,31 @@ if $::osfamily != 'Debian' {
   fail("piface-webhooks Puppet is only compatible with Debian.")
 }
 
+$install_path = '/usr/local/piface-webhooks'
+
 $packages = ['python3', 'python3-pip', 'python3-virtualenv', 'python3-dev']
 
 package {$packages:
   ensure => present,
 } ->
 
+# setup modprobe to install the spi-bcm2708 module at boot
+kmod::install {'spi-bcm2708': } ->
+
+# load the module now
+kmod::load {'spi-bcm2708': } ->
+
+# create the virtualenv
 exec {'make-virtualenv':
-  command => '/usr/bin/virtualenv -p /usr/bin/python3 /usr/local/piface-webhooks',
-  creates => '/usr/local/piface-webhooks/bin/python',
+  command => "/usr/bin/virtualenv -p /usr/bin/python3 ${install_path}",
+  creates => "${install_path}/bin/pip",
+  user    => 'root',
+} ->
+
+# install the git clone in the virtualenv
+# this always runs, so that it updates any entry points
+exec {'install-package':
+  command => "${install_path}/bin/pip install .",
+  cwd     => $install_path,
   user    => 'root',
 }

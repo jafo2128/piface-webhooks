@@ -37,4 +37,5 @@
 # Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 
+puppet module install camptocamp-kmod
 puppet apply -t piface_webhooks_dependencies.pp

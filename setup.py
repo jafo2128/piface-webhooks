@@ -80,7 +80,7 @@ setup(
     packages=find_packages(),
     entry_points="""
     [console_scripts]
-    pifacehooks = piface_webhooks.runner:console_entry_point
+    piface-webhooks = piface_webhooks.runner:console_entry_point
     """,
     url='https://github.com/jantman/piface_webhooks',
     description='Python script/daemon to read RPi PiFace inputs and run a webhook when they change.',

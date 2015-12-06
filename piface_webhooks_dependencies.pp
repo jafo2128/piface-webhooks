@@ -37,10 +37,19 @@
 # Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 
+# this installs python3, python3-pip, python3-dev and python3-virtualenv
 class {'python':
   ensure     => 'present',
   version    => '3',
   pip        => 'present',
   dev        => 'present',
   virtualenv => 'present',
+}
+
+# this creates a python3 virtualenv at /usr/local/piface-webhooks
+python::pyvenv {'/usr/local/piface-webhooks':
+  ensure  => present,
+  owner   => 'root',
+  group   => 'root',
+  require => Class['python'],
 }

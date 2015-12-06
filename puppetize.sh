@@ -1,6 +1,6 @@
-# piface_webhooks_dependencies.pp
+#!/bin/bash
 #
-# Puppet manifest to install system-level dependencies for piface-webhooks
+# Wrapper to install piface-webhooks with puppet.
 #
 # The latest version of this package is available at:
 # <https://github.com/jantman/piface_webhooks>
@@ -37,10 +37,4 @@
 # Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 
-class {'python':
-  ensure     => 'present',
-  version    => '3',
-  pip        => 'present',
-  dev        => 'present',
-  virtualenv => 'present',
-}
+puppet module install stankevich-python

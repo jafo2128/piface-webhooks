@@ -49,12 +49,6 @@ package {$packages:
   ensure => present,
 } ->
 
-# setup modprobe to install the spi-bcm2708 module at boot
-kmod::install {'spi-bcm2708': } ->
-
-# load the module now
-kmod::load {'spi-bcm2708': } ->
-
 # create the virtualenv
 exec {'make-virtualenv':
   command => "/usr/bin/virtualenv -p /usr/bin/python3 ${install_path}",

@@ -37,5 +37,24 @@
 # Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 
-puppet module install camptocamp-kmod
+# setup kernel module - see http://pifacecommon.readthedocs.org/en/latest/installation.html#enable-the-spi-module
+if [[ -e /etc/modprobe.d/raspi-blacklist.conf ]]; then
+    # kernel < 3.18
+    sed -i 's/^blacklist spi-bcm2708/# blacklist spi-bcm2708/' /etc/modprobe.d/raspi-blacklist.conf
+    echo "Added SPI (GPIO) module to /boot/config.txt; you must now reboot and then re-run this script."
+    exit 1
+else
+    # kernel >= 3.18
+    if ! grep 'dtparam=spi=on' /boot/config.txt; then
+        echo "dtparam=spi=on" >> /boot/config.txt
+        echo "Added SPI (GPIO) module to /boot/config.txt; you must now reboot and then re-run this script."
+        exit 1
+    fi
+fi
+
+if ! lsmod | grep spi-bcm2708; then
+    echo "ERROR: spi-bcm2708 module not seen in 'lsmod' output; something is wrong!"
+    exit 1
+fi
+
 puppet apply -t piface_webhooks_dependencies.pp

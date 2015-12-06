@@ -38,3 +38,4 @@
 ################################################################################
 
 puppet module install stankevich-python
+puppet apply -t piface_webhooks_dependencies.pp

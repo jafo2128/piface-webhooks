@@ -45,6 +45,7 @@ with open('README.rst') as file:
     long_description = file.read()
 
 requires = [
+    'pifacedigitalio>=3.0.5'
 ]
 
 classifiers = [

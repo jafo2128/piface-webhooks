@@ -54,5 +54,5 @@ python::virtualenv {'/usr/local/piface-webhooks':
   version => '3',
   owner   => 'root',
   group   => 'root',
-  require => Class['python'],
+  require => [Class['python'], Package['virtualenv']],
 }

@@ -52,7 +52,7 @@ else
     fi
 fi
 
-if ! lsmod | grep spi-bcm2708; then
+if ! lsmod | grep spi_bcm2708; then
     echo "ERROR: spi-bcm2708 module not seen in 'lsmod' output; something is wrong!"
     exit 1
 fi

@@ -37,7 +37,9 @@
 # Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 
-
+if $::osfamily != 'Debian' {
+  fail("piface-webhooks Puppet is only compatible with Debian.")
+}
 
 # this installs python3, python3-pip, python3-dev and python3-virtualenv
 class {'python':

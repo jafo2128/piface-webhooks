@@ -41,20 +41,14 @@ if $::osfamily != 'Debian' {
   fail("piface-webhooks Puppet is only compatible with Debian.")
 }
 
-# this installs python3, python3-pip, python3-dev and python3-virtualenv
-class {'python':
-  ensure     => 'present',
-  version    => '3',
-  pip        => 'present',
-  dev        => 'present',
-  virtualenv => 'present',
-}
+$packages = ['python3', 'python3-pip', 'python3-virtualenv', 'python3-dev']
 
-# this creates a python3 virtualenv at /usr/local/piface-webhooks
-python::virtualenv {'/usr/local/piface-webhooks':
-  ensure  => present,
-  version => '3',
-  owner   => 'root',
-  group   => 'root',
-  require => [Class['python'], Package['virtualenv']],
+package {$packages:
+  ensure => present,
+} ->
+
+exec {'make-virtualenv':
+  command => '/usr/bin/virtualenv -p /usr/bin/python3 /usr/local/piface-webhooks',
+  creates => '/usr/local/piface-webhooks/bin/python',
+  user    => 'root',
 }

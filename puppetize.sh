@@ -37,5 +37,4 @@
 # Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 
-puppet module install stankevich-python
 puppet apply -t piface_webhooks_dependencies.pp

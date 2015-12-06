@@ -45,7 +45,7 @@ class {'python':
   version    => '3',
   pip        => 'present',
   dev        => 'present',
-  virtualenv => true,
+  virtualenv => 'present',
 }
 
 # this creates a python3 virtualenv at /usr/local/piface-webhooks

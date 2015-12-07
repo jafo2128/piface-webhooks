@@ -281,7 +281,6 @@ class TestListener(object):
         assert mock_logger.mock_calls == [
             call.info("Received ON event for pin %s", 3),
             call.debug("Setting output %s on", 3),
-            call.debug("Set output %s on", 3)
         ]
         assert mock_handle.mock_calls == [call(3, 1, 1234.5678)]
         assert self.mock_chip.mock_calls == []
@@ -332,7 +331,6 @@ class TestListener(object):
         assert mock_logger.mock_calls == [
             call.info("Received OFF event for pin %s", 1),
             call.debug("Setting output %s off", 1),
-            call.debug("Set output %s off", 1)
         ]
         assert mock_handle.mock_calls == [call(1, 0, 1234.5678)]
         assert self.mock_chip.mock_calls == []

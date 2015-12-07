@@ -101,7 +101,6 @@ class Listener(object):
         # now set the LED
         logger.debug("Setting output %s on", event.pin_num)
         self.chip.output_pins[event.pin_num].turn_on()
-        logger.debug("Set output %s on", event.pin_num)
 
     def handle_input_off(self, event):
         """
@@ -121,7 +120,6 @@ class Listener(object):
         # now set the LED
         logger.debug("Setting output %s off", event.pin_num)
         self.chip.output_pins[event.pin_num].turn_off()
-        logger.debug("Set output %s off", event.pin_num)
 
     def no_state_change(self, pin, new_state):
         """

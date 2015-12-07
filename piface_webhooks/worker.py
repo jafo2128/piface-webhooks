@@ -44,8 +44,8 @@ import logging
 import re
 from datetime import datetime
 
-import piface_webhooks.settings as settings
 from piface_webhooks.version import VERSION
+from piface_webhooks.config import Config
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger()
@@ -56,6 +56,7 @@ class Worker(object):
     fname_re = re.compile(r'^pinevent_([0-9]+\.[0-9]+)_pin([0-9]+)_state(0|1)$')
 
     def __init__(self):
+        self.config = Config()
         logger.info("Initializing worker")
         self.process_events = True
 
@@ -69,7 +70,7 @@ class Worker(object):
     def handle_files(self):
         """Check for new files, and handle them in order if present"""
         handle = {}
-        for fname in os.listdir(settings.QUEUE_PATH):
+        for fname in os.listdir(self.config.QUEUE_PATH):
             m = self.fname_re.match(fname)
             if not m:
                 continue
@@ -83,7 +84,7 @@ class Worker(object):
             try:
                 self.handle_one_file(fname, event[0], event[1], event[2])
                 logger.debug("File handled; removing: %s", fname)
-                os.unlink(os.path.join(settings.QUEUE_PATH, fname))
+                os.unlink(os.path.join(self.config.QUEUE_PATH, fname))
             except:
                 logger.exception("Execption while handling event file %s",
                                  fname)
@@ -91,11 +92,11 @@ class Worker(object):
     def handle_one_file(self, fname, evt_datetime, pin, state):
         logger.debug("Handling event: pin=%d state=%d dt=%s (%s)",
                      pin, state, evt_datetime, fname)
-        for cb in settings.CALLBACKS:
+        for cb in self.config.CALLBACKS:
             logger.debug("Running callback: %s", cb)
             try:
-                cb(evt_datetime, pin, state, settings.PINS[pin]['name'],
-                   settings.PINS[pin]['states'][state])
+                cb(evt_datetime, pin, state, self.config.PINS[pin]['name'],
+                   self.config.PINS[pin]['states'][state])
                 logger.debug("Callback finished")
             except:
                 logger.exception("Callback raised an exception.")

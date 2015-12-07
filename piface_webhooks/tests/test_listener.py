@@ -79,12 +79,17 @@ class TestEntryPoint(object):
 class TestInit(object):
 
     def test_init(self):
-        cls = Listener()
+        with patch('%s.Config' % pbm) as mock_config:
+            type(mock_config.return_value).PINS = [0, 0, 0, 0]
+            cls = Listener()
         assert cls.write_files is True
         assert cls.current_values == []
+        assert mock_config.mock_calls == [call()]
+        assert cls.config == mock_config.return_value
 
     def test_init_too_few_pins(self):
-        with patch('%s.settings.PINS' % pbm, [1]):
+        with patch('%s.Config' % pbm) as mock_config:
+            type(mock_config.return_value).PINS = [0]
             with pytest.raises(SystemExit):
                 Listener()
 
@@ -115,9 +120,12 @@ class TestListener(object):
         ]
 
         with patch('%s.PiFaceDigital' % pbm) as mock_pfd:
-            mock_pfd.return_value = self.mock_chip
-            self.cls = Listener()
+            with patch('%s.Config' % pbm) as mock_config:
+                type(mock_config.return_value).PINS = [0, 0, 0, 0]
+                mock_pfd.return_value = self.mock_chip
+                self.cls = Listener()
         self.cls.chip = self.mock_chip
+        self.config = mock_config
 
     def test_parse_args(self):
         argv = ['-V']
@@ -376,12 +384,12 @@ class TestListener(object):
 
     def test_handle_change_on(self):
         fpath = '/foo/bar/pinevent_123.4567_pin2_state1'
-        with patch('%s.settings.QUEUE_PATH' % pbm, '/foo/bar'):
-            with patch('%s.logger' % pbm) as mock_logger:
-                with patch('%s.open' % pbm,
-                           mock_open(read_data='')) as mock_opn:
-                    with patch('%s.os.utime' % pbm) as mock_utime:
-                        self.cls.handle_change(2, 1, 123.4567)
+        type(self.cls.config).QUEUE_PATH = '/foo/bar'
+        with patch('%s.logger' % pbm) as mock_logger:
+            with patch('%s.open' % pbm,
+                       mock_open(read_data='')) as mock_opn:
+                with patch('%s.os.utime' % pbm) as mock_utime:
+                    self.cls.handle_change(2, 1, 123.4567)
         assert mock_logger.mock_calls == [
             call.debug("Created event file: %s", fpath)
         ]
@@ -397,12 +405,12 @@ class TestListener(object):
     def test_handle_change_off_no_write(self):
         self.cls.write_files = False
         fpath = '/foo/bar/pinevent_123.4567_pin2_state0'
-        with patch('%s.settings.QUEUE_PATH' % pbm, '/foo/bar'):
-            with patch('%s.logger' % pbm) as mock_logger:
-                with patch('%s.open' % pbm,
-                           mock_open(read_data='')) as mock_opn:
-                    with patch('%s.os.utime' % pbm) as mock_utime:
-                        self.cls.handle_change(2, 0, 123.4567)
+        type(self.cls.config).QUEUE_PATH = '/foo/bar'
+        with patch('%s.logger' % pbm) as mock_logger:
+            with patch('%s.open' % pbm,
+                       mock_open(read_data='')) as mock_opn:
+                with patch('%s.os.utime' % pbm) as mock_utime:
+                    self.cls.handle_change(2, 0, 123.4567)
         assert mock_logger.mock_calls == [
             call.warning("Would create event file: %s", fpath)
         ]
@@ -410,10 +418,10 @@ class TestListener(object):
         assert mock_utime.mock_calls == []
 
     def test_set_output_no_leds(self):
-        with patch('%s.settings.NO_LEDS' % pbm, True):
-            with patch('%s.settings.INVERT_LED' % pbm, False):
-                with patch('%s.logger' % pbm) as mock_logger:
-                    self.cls.set_output(0, 1)
+        type(self.cls.config).NO_LEDS = True
+        type(self.cls.config).INVERT_LED = False
+        with patch('%s.logger' % pbm) as mock_logger:
+            self.cls.set_output(0, 1)
         assert mock_logger.mock_calls == [
             call.debug("Not lighting LEDs")
         ]
@@ -424,10 +432,10 @@ class TestListener(object):
         assert self.opin3.mock_calls == []
 
     def test_set_output_on(self):
-        with patch('%s.settings.NO_LEDS' % pbm, False):
-            with patch('%s.settings.INVERT_LED' % pbm, False):
-                with patch('%s.logger' % pbm) as mock_logger:
-                    self.cls.set_output(0, 1)
+        type(self.cls.config).NO_LEDS = False
+        type(self.cls.config).INVERT_LED = False
+        with patch('%s.logger' % pbm) as mock_logger:
+            self.cls.set_output(0, 1)
         assert mock_logger.mock_calls == [
             call.debug("Setting output %s on", 0)
         ]
@@ -438,10 +446,10 @@ class TestListener(object):
         assert self.opin3.mock_calls == []
 
     def test_set_output_off(self):
-        with patch('%s.settings.NO_LEDS' % pbm, False):
-            with patch('%s.settings.INVERT_LED' % pbm, False):
-                with patch('%s.logger' % pbm) as mock_logger:
-                    self.cls.set_output(2, 0)
+        type(self.cls.config).NO_LEDS = False
+        type(self.cls.config).INVERT_LED = False
+        with patch('%s.logger' % pbm) as mock_logger:
+            self.cls.set_output(2, 0)
         assert mock_logger.mock_calls == [
             call.debug("Setting output %s off", 2)
         ]
@@ -452,10 +460,10 @@ class TestListener(object):
         assert self.opin3.mock_calls == []
 
     def test_set_output_on_invert(self):
-        with patch('%s.settings.NO_LEDS' % pbm, False):
-            with patch('%s.settings.INVERT_LED' % pbm, True):
-                with patch('%s.logger' % pbm) as mock_logger:
-                    self.cls.set_output(0, 1)
+        type(self.cls.config).NO_LEDS = False
+        type(self.cls.config).INVERT_LED = True
+        with patch('%s.logger' % pbm) as mock_logger:
+            self.cls.set_output(0, 1)
         assert mock_logger.mock_calls == [
             call.debug("Setting output %s off", 0)
         ]
@@ -466,10 +474,10 @@ class TestListener(object):
         assert self.opin3.mock_calls == []
 
     def test_set_output_off_invert(self):
-        with patch('%s.settings.NO_LEDS' % pbm, False):
-            with patch('%s.settings.INVERT_LED' % pbm, True):
-                with patch('%s.logger' % pbm) as mock_logger:
-                    self.cls.set_output(2, 0)
+        type(self.cls.config).NO_LEDS = False
+        type(self.cls.config).INVERT_LED = True
+        with patch('%s.logger' % pbm) as mock_logger:
+            self.cls.set_output(2, 0)
         assert mock_logger.mock_calls == [
             call.debug("Setting output %s on", 2)
         ]

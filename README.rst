@@ -26,7 +26,10 @@ install the project in ``/usr/local/piface-webhooks``.
 Configuration
 -------------
 
-Edit ``setup.py``.
+All components of piface-webhooks get their configuration from a Python module. For the simplest case (where you git cloned this repository),
+copy ``piface_webhooks/settings.py.example`` to ``piface_webhooks/settings.py`` and edit the settings to your liking; descriptions of them
+and what they do are in comments. If you wish to keep your settings outside of the git repository, you can use any importable Python module;
+simply export the name of the module as the ``PIFACE_WEBHOOKS_SETTINGS_MODULE`` environment variable (inspired by `django settings <https://docs.djangoproject.com/en/1.9/topics/settings/>`_).
 
 Simple Test/Foreground Operation
 ---------------------------------

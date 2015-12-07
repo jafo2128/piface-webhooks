@@ -41,8 +41,6 @@ import logging
 import time
 import requests
 
-from piface_webhooks.version import VERSION
-
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger()
 

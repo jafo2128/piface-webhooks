@@ -76,14 +76,19 @@ class TestEntryPoint(object):
 class TestInit(object):
 
     def test_init(self):
-        cls = Worker()
+        with patch('%s.Config' % pbm) as mock_config:
+            cls = Worker()
+        assert mock_config.mock_calls == [call()]
+        assert cls.config == mock_config.return_value
         assert cls.process_events is True
 
 
 class TestWorker(object):
 
     def setup(self):
-        self.cls = Worker()
+        with patch('%s.Config' % pbm) as mock_config:
+            self.cls = Worker()
+        self.config = mock_config.return_value
 
     def test_parse_args(self):
         argv = ['-V']
@@ -211,14 +216,15 @@ class TestWorker(object):
             if fname == 'pinevent_1420863332.123456_pin2_state1':
                 raise ex
 
+        type(self.config).QUEUE_PATH = '/foo/bar'
+
         with patch('%s.logger' % pbm) as mock_logger:
-            with patch('%s.settings.QUEUE_PATH' % pbm, '/foo/bar'):
-                with patch('%s.os.listdir' % pbm) as mock_listdir:
-                    with patch('%s.handle_one_file' % pb) as mock_handle:
-                        with patch('%s.os.unlink' % pbm) as mock_unlink:
-                            mock_listdir.return_value = flist
-                            mock_handle.side_effect = se_handle
-                            self.cls.handle_files()
+            with patch('%s.os.listdir' % pbm) as mock_listdir:
+                with patch('%s.handle_one_file' % pb) as mock_handle:
+                    with patch('%s.os.unlink' % pbm) as mock_unlink:
+                        mock_listdir.return_value = flist
+                        mock_handle.side_effect = se_handle
+                        self.cls.handle_files()
         assert mock_logger.mock_calls == [
             call.info("Found %d new events", 3),
             call.debug('File handled; removing: %s',
@@ -249,13 +255,14 @@ class TestWorker(object):
         flist = [
             'foobar',
         ]
+        type(self.config).QUEUE_PATH = '/foo/bar'
+
         with patch('%s.logger' % pbm) as mock_logger:
-            with patch('%s.settings.QUEUE_PATH' % pbm, '/foo/bar'):
-                with patch('%s.os.listdir' % pbm) as mock_listdir:
-                    with patch('%s.handle_one_file' % pb) as mock_handle:
-                        with patch('%s.os.unlink' % pbm) as mock_unlink:
-                            mock_listdir.return_value = flist
-                            self.cls.handle_files()
+            with patch('%s.os.listdir' % pbm) as mock_listdir:
+                with patch('%s.handle_one_file' % pb) as mock_handle:
+                    with patch('%s.os.unlink' % pbm) as mock_unlink:
+                        mock_listdir.return_value = flist
+                        self.cls.handle_files()
         assert mock_logger.mock_calls == []
         assert mock_listdir.mock_calls == [call('/foo/bar')]
         assert mock_handle.mock_calls == []
@@ -278,12 +285,12 @@ class TestWorker(object):
             {'name': 'pin3', 'states': ['pin3state0', 'pin3state1']},
         ]
 
+        type(self.config).CALLBACKS = cbs
+        type(self.config).PINS = pins
+
         with patch('%s.logger' % pbm) as mock_logger:
-            with patch('%s.settings.CALLBACKS' % pbm, cbs):
-                with patch('%s.settings.PINS' % pbm, pins):
-                    self.cls.handle_one_file(
-                        'myfname', datetime(2015, 2, 13, 1, 2, 3, 123456),
-                        2, 0)
+            self.cls.handle_one_file(
+                'myfname', datetime(2015, 2, 13, 1, 2, 3, 123456), 2, 0)
         assert mock_logger.mock_calls == [
             call.debug("Handling event: pin=%d state=%d dt=%s (%s)",
                        2, 0, datetime(2015, 2, 13, 1, 2, 3, 123456), 'myfname'),

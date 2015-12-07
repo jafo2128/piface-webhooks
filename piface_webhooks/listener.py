@@ -45,8 +45,8 @@ import logging
 from pifacedigitalio import (PiFaceDigital, InputEventListener, IODIR_ON,
                              IODIR_OFF)
 
-import piface_webhooks.settings as settings
 from piface_webhooks.version import VERSION
+from piface_webhooks.config import Config
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger()
@@ -55,8 +55,9 @@ logger = logging.getLogger()
 class Listener(object):
 
     def __init__(self):
+        self.config = Config()
         logger.info("Initializing listener")
-        if len(settings.PINS) < 4:
+        if len(self.config.PINS) < 4:
             logger.critical("ERROR - please configure all 4 pins")
             raise SystemExit(1)
         self.write_files = True
@@ -146,7 +147,7 @@ class Listener(object):
         :type timestamp: float
         """
         fname = 'pinevent_%s_pin%s_state%s' % (timestamp, pin_num, state)
-        fpath = os.path.join(settings.QUEUE_PATH, fname)
+        fpath = os.path.join(self.config.QUEUE_PATH, fname)
         if not self.write_files:
             logger.warning('Would create event file: %s', fpath)
             return
@@ -159,17 +160,17 @@ class Listener(object):
         """
         Change the state of an output pin in response to an input change. Set
         the output to the same state as the input, unless
-        ``settings.INVERT_LED is True``, in which case set it to the opposite.
+        ``config.INVERT_LED is True``, in which case set it to the opposite.
 
         :param pin_num: the pin number to change
         :type pin_num: int
         :param state: the new state - 0=off, 1=on
         :type state: int
         """
-        if hasattr(settings, 'NO_LEDS') and settings.NO_LEDS:
+        if self.config.NO_LEDS:
             logger.debug("Not lighting LEDs")
             return
-        if hasattr(settings, 'INVERT_LED') and settings.INVERT_LED:
+        if self.config.INVERT_LED:
             if state == 0:
                 state = 1
             else:

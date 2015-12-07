@@ -56,6 +56,7 @@ class Listener(object):
 
     def __init__(self):
         logger.info("Initializing listener")
+        self.write_files = True
 
     def run(self):
         """initialize and run the PiFaceWebhookApp"""
@@ -117,6 +118,9 @@ class Listener(object):
             state_name = 'on'
         fname = 'pinevent_%s_%s_%s' % (timestamp, pin_num, state_name)
         fpath = os.path.join(settings.QUEUE_PATH, fname)
+        if not self.write_files:
+            logger.warning('Would create event file: %s', fpath)
+            return
         # touch the file
         with open(fpath, 'a'):
             os.utime(fpath, None)
@@ -140,6 +144,7 @@ class Listener(object):
             debug_formatter = logging.Formatter(fmt=FORMAT)
             logger.handlers[0].setFormatter(debug_formatter)
             logger.setLevel(logging.DEBUG)
+        self.write_files = args.write_files
         self.run()
 
     def parse_args(self, argv):
@@ -153,6 +158,9 @@ class Listener(object):
         """
         desc = 'Listen for PiFace input changes and queue them to disk'
         p = argparse.ArgumentParser(description=desc)
+        p.add_argument('-w', '--no-write', dest='write_files',
+                       action='store_false', default=True,
+                       help='do not write queue files; just log changes')
         p.add_argument('-v', '--verbose', dest='verbose', action='count',
                        default=0,
                        help='verbose output. specify twice for debug-level '

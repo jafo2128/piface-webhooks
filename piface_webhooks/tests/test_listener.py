@@ -112,6 +112,10 @@ class TestListener(object):
                 self.cls.parse_args(argv)
         assert mock_parser.mock_calls == [
             call(description=desc),
+            call().add_argument('-w', '--no-write', dest='write_files',
+                                action='store_false', default=True,
+                                help='do not write queue files; just log '
+                                'changes'),
             call().add_argument('-v', '--verbose', dest='verbose',
                                 action='count',
                                 default=0,
@@ -172,6 +176,20 @@ class TestListener(object):
         assert err == ''
         assert mock_set_level.mock_calls == []
         assert mock_run.mock_calls == [call()]
+        assert self.cls.write_files is True
+
+    def test_entry_no_write(self, capsys):
+        argv = ['piface-webhooks', '--no-write']
+        with patch.object(sys, 'argv', argv):
+            with patch('%s.logger.setLevel' % pbm) as mock_set_level:
+                with patch('%s.run' % pb) as mock_run:
+                    self.cls.console_entry_point()
+        out, err = capsys.readouterr()
+        assert out == ''
+        assert err == ''
+        assert mock_set_level.mock_calls == []
+        assert mock_run.mock_calls == [call()]
+        assert self.cls.write_files is False
 
     def test_run(self):
         with patch('%s.logger' % pbm) as mock_logger:
@@ -268,7 +286,8 @@ class TestListener(object):
             call(fpath, None)
         ]
 
-    def test_handle_change_off(self):
+    def test_handle_change_off_no_write(self):
+        self.cls.write_files = False
         fpath = '/foo/bar/pinevent_123.4567_2_off'
         with patch('%s.settings.QUEUE_PATH' % pbm, '/foo/bar'):
             with patch('%s.logger' % pbm) as mock_logger:
@@ -277,13 +296,7 @@ class TestListener(object):
                     with patch('%s.os.utime' % pbm) as mock_utime:
                         self.cls.handle_change(2, False, 123.4567)
         assert mock_logger.mock_calls == [
-            call.debug("Created event file: %s", fpath)
+            call.warning("Would create event file: %s", fpath)
         ]
-        assert mock_opn.mock_calls == [
-            call(fpath, 'a'),
-            call().__enter__(),
-            call().__exit__(None, None, None)
-        ]
-        assert mock_utime.mock_calls == [
-            call(fpath, None)
-        ]
+        assert mock_opn.mock_calls == []
+        assert mock_utime.mock_calls == []

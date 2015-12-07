@@ -139,7 +139,7 @@ class Listener(object):
         elif args.verbose > 1:
             logger.warning("Setting log level to DEBUG")
             # debug-level logging hacks
-            FORMAT = "[%(asctime)][%(levelname)s %(filename)s:%(lineno)s - " \
+            FORMAT = "[%(asctime)s][%(levelname)s %(filename)s:%(lineno)s - " \
                      "%(name)s.%(funcName)s() ] %(message)s"
             debug_formatter = logging.Formatter(fmt=FORMAT)
             logger.handlers[0].setFormatter(debug_formatter)

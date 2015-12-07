@@ -273,20 +273,21 @@ class TestListener(object):
         with patch('%s.handle_change' % pb) as mock_handle:
             with patch('%s.logger' % pbm) as mock_logger:
                 with patch('%s.no_state_change' % pb) as mock_no_change:
-                    mock_no_change.return_value = False
-                    self.cls.handle_input_on(mock_evt)
+                    with patch('%s.set_output' % pb) as mock_set:
+                        mock_no_change.return_value = False
+                        self.cls.handle_input_on(mock_evt)
         assert mock_logger.mock_calls == [
             call.info("Received ON event for pin %s", 3),
-            call.debug("Setting output %s on", 3),
         ]
         assert mock_handle.mock_calls == [call(3, 1, 1234.5678)]
         assert self.mock_chip.mock_calls == []
         assert self.opin0.mock_calls == []
         assert self.opin1.mock_calls == []
         assert self.opin2.mock_calls == []
-        assert self.opin3.mock_calls == [call.turn_on()]
+        assert self.opin3.mock_calls == []
         assert self.cls.current_values == [5, 5, 5, 1]
         assert mock_no_change.mock_calls == [call(3, 1)]
+        assert mock_set.mock_calls == [call(3, 1)]
 
     def test_handle_input_on_no_change(self):
         mock_evt = Mock(spec_set=InterruptEvent)
@@ -298,8 +299,9 @@ class TestListener(object):
         with patch('%s.handle_change' % pb) as mock_handle:
             with patch('%s.logger' % pbm) as mock_logger:
                 with patch('%s.no_state_change' % pb) as mock_no_change:
-                    mock_no_change.return_value = True
-                    self.cls.handle_input_on(mock_evt)
+                    with patch('%s.set_output' % pb) as mock_set:
+                        mock_no_change.return_value = True
+                        self.cls.handle_input_on(mock_evt)
         assert mock_logger.mock_calls == [
             call.info("Ignoring duplicate event for pin %s state %s",
                       3, 1)
@@ -312,6 +314,7 @@ class TestListener(object):
         assert self.opin3.mock_calls == []
         assert self.cls.current_values == [5, 5, 5, 1]
         assert mock_no_change.mock_calls == [call(3, 1)]
+        assert mock_set.mock_calls == []
 
     def test_handle_input_off(self):
         mock_evt = Mock(spec_set=InterruptEvent)
@@ -323,20 +326,21 @@ class TestListener(object):
         with patch('%s.handle_change' % pb) as mock_handle:
             with patch('%s.logger' % pbm) as mock_logger:
                 with patch('%s.no_state_change' % pb) as mock_no_change:
-                    mock_no_change.return_value = False
-                    self.cls.handle_input_off(mock_evt)
+                    with patch('%s.set_output' % pb) as mock_set:
+                        mock_no_change.return_value = False
+                        self.cls.handle_input_off(mock_evt)
         assert mock_logger.mock_calls == [
             call.info("Received OFF event for pin %s", 1),
-            call.debug("Setting output %s off", 1),
         ]
         assert mock_handle.mock_calls == [call(1, 0, 1234.5678)]
         assert self.mock_chip.mock_calls == []
         assert self.opin0.mock_calls == []
-        assert self.opin1.mock_calls == [call.turn_off()]
+        assert self.opin1.mock_calls == []
         assert self.opin2.mock_calls == []
         assert self.opin3.mock_calls == []
         assert self.cls.current_values == [5, 0, 5, 5]
         assert mock_no_change.mock_calls == [call(1, 0)]
+        assert mock_set.mock_calls == [call(1, 0)]
 
     def test_handle_input_off_no_change(self):
         mock_evt = Mock(spec_set=InterruptEvent)
@@ -348,8 +352,9 @@ class TestListener(object):
         with patch('%s.handle_change' % pb) as mock_handle:
             with patch('%s.logger' % pbm) as mock_logger:
                 with patch('%s.no_state_change' % pb) as mock_no_change:
-                    mock_no_change.return_value = True
-                    self.cls.handle_input_off(mock_evt)
+                    with patch('%s.set_output' % pb) as mock_set:
+                        mock_no_change.return_value = True
+                        self.cls.handle_input_off(mock_evt)
         assert mock_logger.mock_calls == [
             call.info("Ignoring duplicate event for pin %s state %s",
                       1, 0)
@@ -362,6 +367,7 @@ class TestListener(object):
         assert self.opin3.mock_calls == []
         assert self.cls.current_values == [5, 0, 5, 5]
         assert mock_no_change.mock_calls == [call(1, 0)]
+        assert mock_set.mock_calls == []
 
     def test_no_state_change(self):
         self.cls.current_values = [1, 0, 1]
@@ -402,3 +408,73 @@ class TestListener(object):
         ]
         assert mock_opn.mock_calls == []
         assert mock_utime.mock_calls == []
+
+    def test_set_output_no_leds(self):
+        with patch('%s.settings.NO_LEDS' % pbm, True):
+            with patch('%s.settings.INVERT_LED' % pbm, False):
+                with patch('%s.logger' % pbm) as mock_logger:
+                    self.cls.set_output(0, 1)
+        assert mock_logger.mock_calls == [
+            call.debug("Not lighting LEDs")
+        ]
+        assert self.mock_chip.mock_calls == []
+        assert self.opin0.mock_calls == []
+        assert self.opin1.mock_calls == []
+        assert self.opin2.mock_calls == []
+        assert self.opin3.mock_calls == []
+
+    def test_set_output_on(self):
+        with patch('%s.settings.NO_LEDS' % pbm, False):
+            with patch('%s.settings.INVERT_LED' % pbm, False):
+                with patch('%s.logger' % pbm) as mock_logger:
+                    self.cls.set_output(0, 1)
+        assert mock_logger.mock_calls == [
+            call.debug("Setting output %s on", 0)
+        ]
+        assert self.mock_chip.mock_calls == []
+        assert self.opin0.mock_calls == [call.turn_on()]
+        assert self.opin1.mock_calls == []
+        assert self.opin2.mock_calls == []
+        assert self.opin3.mock_calls == []
+
+    def test_set_output_off(self):
+        with patch('%s.settings.NO_LEDS' % pbm, False):
+            with patch('%s.settings.INVERT_LED' % pbm, False):
+                with patch('%s.logger' % pbm) as mock_logger:
+                    self.cls.set_output(2, 0)
+        assert mock_logger.mock_calls == [
+            call.debug("Setting output %s off", 2)
+        ]
+        assert self.mock_chip.mock_calls == []
+        assert self.opin0.mock_calls == []
+        assert self.opin1.mock_calls == []
+        assert self.opin2.mock_calls == [call.turn_off()]
+        assert self.opin3.mock_calls == []
+
+    def test_set_output_on_invert(self):
+        with patch('%s.settings.NO_LEDS' % pbm, False):
+            with patch('%s.settings.INVERT_LED' % pbm, True):
+                with patch('%s.logger' % pbm) as mock_logger:
+                    self.cls.set_output(0, 1)
+        assert mock_logger.mock_calls == [
+            call.debug("Setting output %s off", 0)
+        ]
+        assert self.mock_chip.mock_calls == []
+        assert self.opin0.mock_calls == [call.turn_off()]
+        assert self.opin1.mock_calls == []
+        assert self.opin2.mock_calls == []
+        assert self.opin3.mock_calls == []
+
+    def test_set_output_off_invert(self):
+        with patch('%s.settings.NO_LEDS' % pbm, False):
+            with patch('%s.settings.INVERT_LED' % pbm, True):
+                with patch('%s.logger' % pbm) as mock_logger:
+                    self.cls.set_output(2, 0)
+        assert mock_logger.mock_calls == [
+            call.debug("Setting output %s on", 2)
+        ]
+        assert self.mock_chip.mock_calls == []
+        assert self.opin0.mock_calls == []
+        assert self.opin1.mock_calls == []
+        assert self.opin2.mock_calls == [call.turn_on()]
+        assert self.opin3.mock_calls == []

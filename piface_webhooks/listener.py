@@ -101,9 +101,7 @@ class Listener(object):
             self.current_values[event.pin_num] = 1
         logger.info("Received ON event for pin %s", event.pin_num)
         self.handle_change(event.pin_num, 1, event.timestamp)
-        # now set the LED
-        logger.debug("Setting output %s on", event.pin_num)
-        self.chip.output_pins[event.pin_num].turn_on()
+        self.set_output(event.pin_num, 1)
 
     def handle_input_off(self, event):
         """
@@ -120,9 +118,7 @@ class Listener(object):
             self.current_values[event.pin_num] = 0
         logger.info("Received OFF event for pin %s", event.pin_num)
         self.handle_change(event.pin_num, 0, event.timestamp)
-        # now set the LED
-        logger.debug("Setting output %s off", event.pin_num)
-        self.chip.output_pins[event.pin_num].turn_off()
+        self.set_output(event.pin_num, 0)
 
     def no_state_change(self, pin, new_state):
         """
@@ -158,6 +154,32 @@ class Listener(object):
         with open(fpath, 'a'):
             os.utime(fpath, None)
         logger.debug('Created event file: %s', fpath)
+
+    def set_output(self, pin_num, state):
+        """
+        Change the state of an output pin in response to an input change. Set
+        the output to the same state as the input, unless
+        ``settings.INVERT_LED is True``, in which case set it to the opposite.
+
+        :param pin_num: the pin number to change
+        :type pin_num: int
+        :param state: the new state - 0=off, 1=on
+        :type state: int
+        """
+        if hasattr(settings, 'NO_LEDS') and settings.NO_LEDS:
+            logger.debug("Not lighting LEDs")
+            return
+        if hasattr(settings, 'INVERT_LED') and settings.INVERT_LED:
+            if state == 0:
+                state = 1
+            else:
+                state = 0
+        if state == 1:
+            logger.debug("Setting output %s on", pin_num)
+            self.chip.output_pins[pin_num].turn_on()
+        else:
+            logger.debug("Setting output %s off", pin_num)
+            self.chip.output_pins[pin_num].turn_off()
 
     def console_entry_point(self):
         """entry point to handle args and call run function"""

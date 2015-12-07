@@ -44,6 +44,13 @@ from piface_webhooks.notifiers import *
 # path on disk used to store the queue files; this directory must exist
 QUEUE_PATH = '/var/spool/piface-webhooks'
 
+# Set NO_LEDS to True to not light the LEDs when the pin is on
+NO_LEDS = False
+
+# If INVERT_LED is True, the LED for a given pin will be turned *off* when the
+# pin turns *on*, and vice-versa.
+INVERT_LED = False
+
 ###########################
 # input pin configuration #
 ###########################

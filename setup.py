@@ -83,6 +83,7 @@ setup(
     entry_points="""
     [console_scripts]
     piface-listener = piface_webhooks.listener:console_entry_point
+    piface-worker = piface_webhooks.worker:console_entry_point
     """,
     url='https://github.com/jantman/piface_webhooks',
     description='Python script/daemon to read RPi PiFace inputs and run a webhook (or other callback) when they change.',

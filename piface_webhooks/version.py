@@ -1,5 +1,5 @@
 """
-setup.py
+version.py
 
 The latest version of this package is available at:
 <https://github.com/jantman/piface_webhooks>
@@ -37,56 +37,4 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-from setuptools import setup, find_packages
-from piface_webhooks.version import VERSION
-
-with open('README.rst') as file:
-    long_description = file.read()
-
-requires = [
-    'pifacedigitalio>=3.0.5',
-    'pifacecommon>=4.1.2'
-]
-
-classifiers = [
-    'Development Status :: 3 - Alpha',
-    'Environment :: Console',
-    'Intended Audience :: Developers',
-    'Intended Audience :: Education',
-    'Intended Audience :: Science/Research',
-    'License :: OSI Approved :: GNU Affero General Public ' # continued--
-    'License v3 or later (AGPLv3+)',
-    'Natural Language :: English',
-    'Operating System :: POSIX',
-    'Operating System :: POSIX :: Linux',
-    'Programming Language :: Python',
-    'Programming Language :: Python :: 2.6',
-    'Programming Language :: Python :: 2.7',
-    'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.0',
-    'Programming Language :: Python :: 3.1',
-    'Programming Language :: Python :: 3.2',
-    'Programming Language :: Python :: 3.3',
-    'Programming Language :: Python :: 3.4',
-    'Programming Language :: Python :: 3.5',
-    'Topic :: Education',
-    'Topic :: Home Automation',
-]
-
-setup(
-    name='piface_webhooks',
-    version=VERSION,
-    author='Jason Antman',
-    author_email='jason@jasonantman.com',
-    packages=find_packages(),
-    entry_points="""
-    [console_scripts]
-    piface-webhooks = piface_webhooks.runner:console_entry_point
-    """,
-    url='https://github.com/jantman/piface_webhooks',
-    description='Python script/daemon to read RPi PiFace inputs and run a webhook (or other callback) when they change.',
-    long_description=long_description,
-    install_requires=requires,
-    keywords="raspberrypi rpi raspberry pi piface webhook input sensor",
-    classifiers=classifiers
-)
+VERSION = '0.0.1'

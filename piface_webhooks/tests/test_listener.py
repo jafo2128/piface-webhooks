@@ -45,7 +45,8 @@ import logging
 from piface_webhooks.listener import Listener, console_entry_point
 from piface_webhooks.version import VERSION
 
-from pifacedigitalio import PiFaceDigital, IODIR_ON, IODIR_OFF
+from pifacedigitalio import (PiFaceDigital, IODIR_ON, IODIR_OFF,
+                             InputEventListener)
 from pifacecommon.interrupts import InterruptEvent
 
 # https://code.google.com/p/mock/issues/detail?id=249
@@ -66,25 +67,48 @@ pb = '%s.Listener' % pbm
 
 class TestEntryPoint(object):
 
-    with patch(pb) as mock_listener:
-        console_entry_point()
-    assert mock_listener.mock_calls == [
-        call(),
-        call().console_entry_point()
-    ]
+    def test_entry_point(self):
+        with patch(pb) as mock_listener:
+            console_entry_point()
+        assert mock_listener.mock_calls == [
+            call(),
+            call().console_entry_point()
+        ]
+
+
+class TestInit(object):
+
+    def test_init(self):
+        cls = Listener()
+        assert cls.write_files is True
+        assert cls.current_values == []
 
 
 class TestListener(object):
 
     def setup(self):
         self.mock_chip = Mock(spec_set=PiFaceDigital)
-        self.pin0 = Mock()
-        self.pin1 = Mock()
-        self.pin2 = Mock()
-        self.pin3 = Mock()
+
+        self.opin0 = Mock()
+        self.opin1 = Mock()
+        self.opin2 = Mock()
+        self.opin3 = Mock()
         type(self.mock_chip).output_pins = [
-            self.pin0, self.pin1, self.pin2, self.pin3
+            self.opin0, self.opin1, self.opin2, self.opin3
         ]
+
+        self.ipin0 = Mock()
+        type(self.ipin0).value = 10
+        self.ipin1 = Mock()
+        type(self.ipin1).value = 11
+        self.ipin2 = Mock()
+        type(self.ipin2).value = 12
+        self.ipin3 = Mock()
+        type(self.ipin3).value = 13
+        type(self.mock_chip).input_pins = [
+            self.ipin0, self.ipin1, self.ipin2, self.ipin3
+        ]
+
         with patch('%s.PiFaceDigital' % pbm) as mock_pfd:
             mock_pfd.return_value = self.mock_chip
             self.cls = Listener()
@@ -195,11 +219,30 @@ class TestListener(object):
         with patch('%s.logger' % pbm) as mock_logger:
             with patch('%s.InputEventListener' % pbm) as mock_listener:
                 with patch('%s.PiFaceDigital' % pbm) as mock_io:
-                    self.cls.run()
+                    with patch('%s.register_callbacks' % pb) as mock_reg:
+                        self.cls.run()
         assert mock_logger.mock_calls == [
             call.debug("initializing chip"),
             call.debug("chip initialized"),
             call.debug('creating InputEventListener'),
+            call.debug('activating listener')
+        ]
+        assert mock_listener.mock_calls == [
+            call(chip=self.cls.chip),
+            call().activate()
+        ]
+        assert mock_reg.mock_calls == [call()]
+        assert mock_io.mock_calls == [call()]
+        assert self.cls.chip == mock_io.return_value
+        assert self.cls.listener == mock_listener.return_value
+
+    def test_register_callbacks(self):
+        mock_listener = Mock(spec_set=InputEventListener)
+        self.cls.listener = mock_listener
+        with patch('%s.logger' % pbm) as mock_logger:
+            self.cls.register_callbacks()
+        assert mock_logger.mock_calls == [
+            call.debug("registering callbacks"),
             call.debug('registering callback for %s ON', 0),
             call.debug('registering callback for %s OFF', 0),
             call.debug('registering callback for %s ON', 1),
@@ -208,71 +251,135 @@ class TestListener(object):
             call.debug('registering callback for %s OFF', 2),
             call.debug('registering callback for %s ON', 3),
             call.debug('registering callback for %s OFF', 3),
-            call.debug('activating listener')
+            call.debug('done registering callbacks')
         ]
         assert mock_listener.mock_calls == [
-            call(chip=self.cls.chip),
-            call().register(0, IODIR_ON, self.cls.handle_input_on),
-            call().register(0, IODIR_OFF, self.cls.handle_input_off),
-            call().register(1, IODIR_ON, self.cls.handle_input_on),
-            call().register(1, IODIR_OFF, self.cls.handle_input_off),
-            call().register(2, IODIR_ON, self.cls.handle_input_on),
-            call().register(2, IODIR_OFF, self.cls.handle_input_off),
-            call().register(3, IODIR_ON, self.cls.handle_input_on),
-            call().register(3, IODIR_OFF, self.cls.handle_input_off),
-            call().activate()
+            call.register(0, IODIR_ON, self.cls.handle_input_on),
+            call.register(0, IODIR_OFF, self.cls.handle_input_off),
+            call.register(1, IODIR_ON, self.cls.handle_input_on),
+            call.register(1, IODIR_OFF, self.cls.handle_input_off),
+            call.register(2, IODIR_ON, self.cls.handle_input_on),
+            call.register(2, IODIR_OFF, self.cls.handle_input_off),
+            call.register(3, IODIR_ON, self.cls.handle_input_on),
+            call.register(3, IODIR_OFF, self.cls.handle_input_off),
         ]
-        assert mock_io.mock_calls == [call()]
-        assert self.cls.chip == mock_io.return_value
+        assert self.cls.current_values == [10, 11, 12, 13]
 
     def test_handle_input_on(self):
         mock_evt = Mock(spec_set=InterruptEvent)
         type(mock_evt).pin_num = 3
         type(mock_evt).timestamp = 1234.5678
 
+        self.cls.current_values = [5, 5, 5, 5]
+
         with patch('%s.handle_change' % pb) as mock_handle:
             with patch('%s.logger' % pbm) as mock_logger:
-                self.cls.handle_input_on(mock_evt)
+                with patch('%s.no_state_change' % pb) as mock_no_change:
+                    mock_no_change.return_value = False
+                    self.cls.handle_input_on(mock_evt)
         assert mock_logger.mock_calls == [
             call.info("Received ON event for pin %s", 3),
             call.debug("Setting output %s on", 3),
             call.debug("Set output %s on", 3)
         ]
-        assert mock_handle.mock_calls == [call(3, True, 1234.5678)]
+        assert mock_handle.mock_calls == [call(3, 1, 1234.5678)]
         assert self.mock_chip.mock_calls == []
-        assert self.pin0.mock_calls == []
-        assert self.pin1.mock_calls == []
-        assert self.pin2.mock_calls == []
-        assert self.pin3.mock_calls == [call.turn_on()]
+        assert self.opin0.mock_calls == []
+        assert self.opin1.mock_calls == []
+        assert self.opin2.mock_calls == []
+        assert self.opin3.mock_calls == [call.turn_on()]
+        assert self.cls.current_values == [5, 5, 5, 1]
+        assert mock_no_change.mock_calls == [call(3, 1)]
+
+    def test_handle_input_on_no_change(self):
+        mock_evt = Mock(spec_set=InterruptEvent)
+        type(mock_evt).pin_num = 3
+        type(mock_evt).timestamp = 1234.5678
+
+        self.cls.current_values = [5, 5, 5, 1]
+
+        with patch('%s.handle_change' % pb) as mock_handle:
+            with patch('%s.logger' % pbm) as mock_logger:
+                with patch('%s.no_state_change' % pb) as mock_no_change:
+                    mock_no_change.return_value = True
+                    self.cls.handle_input_on(mock_evt)
+        assert mock_logger.mock_calls == [
+            call.info("Ignoring duplicate event for pin %s state %s",
+                      3, 1)
+        ]
+        assert mock_handle.mock_calls == []
+        assert self.mock_chip.mock_calls == []
+        assert self.opin0.mock_calls == []
+        assert self.opin1.mock_calls == []
+        assert self.opin2.mock_calls == []
+        assert self.opin3.mock_calls == []
+        assert self.cls.current_values == [5, 5, 5, 1]
+        assert mock_no_change.mock_calls == [call(3, 1)]
 
     def test_handle_input_off(self):
         mock_evt = Mock(spec_set=InterruptEvent)
         type(mock_evt).pin_num = 1
         type(mock_evt).timestamp = 1234.5678
 
+        self.cls.current_values = [5, 5, 5, 5]
+
         with patch('%s.handle_change' % pb) as mock_handle:
             with patch('%s.logger' % pbm) as mock_logger:
-                self.cls.handle_input_off(mock_evt)
+                with patch('%s.no_state_change' % pb) as mock_no_change:
+                    mock_no_change.return_value = False
+                    self.cls.handle_input_off(mock_evt)
         assert mock_logger.mock_calls == [
             call.info("Received OFF event for pin %s", 1),
             call.debug("Setting output %s off", 1),
             call.debug("Set output %s off", 1)
         ]
-        assert mock_handle.mock_calls == [call(1, False, 1234.5678)]
+        assert mock_handle.mock_calls == [call(1, 0, 1234.5678)]
         assert self.mock_chip.mock_calls == []
-        assert self.pin0.mock_calls == []
-        assert self.pin1.mock_calls == [call.turn_off()]
-        assert self.pin2.mock_calls == []
-        assert self.pin3.mock_calls == []
+        assert self.opin0.mock_calls == []
+        assert self.opin1.mock_calls == [call.turn_off()]
+        assert self.opin2.mock_calls == []
+        assert self.opin3.mock_calls == []
+        assert self.cls.current_values == [5, 0, 5, 5]
+        assert mock_no_change.mock_calls == [call(1, 0)]
+
+    def test_handle_input_off_no_change(self):
+        mock_evt = Mock(spec_set=InterruptEvent)
+        type(mock_evt).pin_num = 1
+        type(mock_evt).timestamp = 1234.5678
+
+        self.cls.current_values = [5, 0, 5, 5]
+
+        with patch('%s.handle_change' % pb) as mock_handle:
+            with patch('%s.logger' % pbm) as mock_logger:
+                with patch('%s.no_state_change' % pb) as mock_no_change:
+                    mock_no_change.return_value = True
+                    self.cls.handle_input_off(mock_evt)
+        assert mock_logger.mock_calls == [
+            call.info("Ignoring duplicate event for pin %s state %s",
+                      1, 0)
+        ]
+        assert mock_handle.mock_calls == []
+        assert self.mock_chip.mock_calls == []
+        assert self.opin0.mock_calls == []
+        assert self.opin1.mock_calls == []
+        assert self.opin2.mock_calls == []
+        assert self.opin3.mock_calls == []
+        assert self.cls.current_values == [5, 0, 5, 5]
+        assert mock_no_change.mock_calls == [call(1, 0)]
+
+    def test_no_state_change(self):
+        self.cls.current_values = [1, 0, 1]
+        assert self.cls.no_state_change(0, 1) is True
+        assert self.cls.no_state_change(0, 0) is False
 
     def test_handle_change_on(self):
-        fpath = '/foo/bar/pinevent_123.4567_2_on'
+        fpath = '/foo/bar/pinevent_123.4567_pin2_state1'
         with patch('%s.settings.QUEUE_PATH' % pbm, '/foo/bar'):
             with patch('%s.logger' % pbm) as mock_logger:
                 with patch('%s.open' % pbm,
                            mock_open(read_data='')) as mock_opn:
                     with patch('%s.os.utime' % pbm) as mock_utime:
-                        self.cls.handle_change(2, True, 123.4567)
+                        self.cls.handle_change(2, 1, 123.4567)
         assert mock_logger.mock_calls == [
             call.debug("Created event file: %s", fpath)
         ]
@@ -287,13 +394,13 @@ class TestListener(object):
 
     def test_handle_change_off_no_write(self):
         self.cls.write_files = False
-        fpath = '/foo/bar/pinevent_123.4567_2_off'
+        fpath = '/foo/bar/pinevent_123.4567_pin2_state0'
         with patch('%s.settings.QUEUE_PATH' % pbm, '/foo/bar'):
             with patch('%s.logger' % pbm) as mock_logger:
                 with patch('%s.open' % pbm,
                            mock_open(read_data='')) as mock_opn:
                     with patch('%s.os.utime' % pbm) as mock_utime:
-                        self.cls.handle_change(2, False, 123.4567)
+                        self.cls.handle_change(2, 0, 123.4567)
         assert mock_logger.mock_calls == [
             call.warning("Would create event file: %s", fpath)
         ]

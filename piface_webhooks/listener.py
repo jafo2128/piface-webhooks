@@ -57,21 +57,30 @@ class Listener(object):
     def __init__(self):
         logger.info("Initializing listener")
         self.write_files = True
+        self.current_values = []
 
     def run(self):
-        """initialize and run the PiFaceWebhookApp"""
+        """initialize and run the chip interface and event listener"""
         logger.debug("initializing chip")
         self.chip = PiFaceDigital()
         logger.debug("chip initialized")
         logger.debug("creating InputEventListener")
         self.listener = InputEventListener(chip=self.chip)
+        self.register_callbacks()
+        logger.debug("activating listener")
+        self.listener.activate()
+
+    def register_callbacks(self):
+        """record current pin state and register the event callbacks"""
+        logger.debug("registering callbacks")
+        self.current_values = [None] * 4
         for i in range(4):
+            self.current_values[i] = self.chip.input_pins[i].value
             logger.debug("registering callback for %s ON", i)
             self.listener.register(i, IODIR_ON, self.handle_input_on)
             logger.debug("registering callback for %s OFF", i)
             self.listener.register(i, IODIR_OFF, self.handle_input_off)
-        logger.debug("activating listener")
-        self.listener.activate()
+        logger.debug("done registering callbacks")
 
     def handle_input_on(self, event):
         """
@@ -80,8 +89,14 @@ class Listener(object):
         :param event: the event that was detected
         :type event: pifacecommon.interrupts.InterruptEvent
         """
+        if self.no_state_change(event.pin_num, 1):
+            logger.info("Ignoring duplicate event for pin %s state %s",
+                        event.pin_num, 1)
+            return
+        else:
+            self.current_values[event.pin_num] = 1
         logger.info("Received ON event for pin %s", event.pin_num)
-        self.handle_change(event.pin_num, True, event.timestamp)
+        self.handle_change(event.pin_num, 1, event.timestamp)
         # now set the LED
         logger.debug("Setting output %s on", event.pin_num)
         self.chip.output_pins[event.pin_num].turn_on()
@@ -94,12 +109,32 @@ class Listener(object):
         :param event: the event that was detected
         :type event: pifacecommon.interrupts.InterruptEvent
         """
+        if self.no_state_change(event.pin_num, 0):
+            logger.info("Ignoring duplicate event for pin %s state %s",
+                        event.pin_num, 0)
+            return
+        else:
+            self.current_values[event.pin_num] = 0
         logger.info("Received OFF event for pin %s", event.pin_num)
-        self.handle_change(event.pin_num, False, event.timestamp)
+        self.handle_change(event.pin_num, 0, event.timestamp)
         # now set the LED
         logger.debug("Setting output %s off", event.pin_num)
         self.chip.output_pins[event.pin_num].turn_off()
         logger.debug("Set output %s off", event.pin_num)
+
+    def no_state_change(self, pin, new_state):
+        """
+        Return True if the pin's state has changed, False otherwise.
+
+        :param pin: the pin number
+        :type pin: int
+        :param new_state: the new pin state/value
+        :type state: int
+        :rtype: bool
+        """
+        if self.current_values[pin] == new_state:
+            return True
+        return False
 
     def handle_change(self, pin_num, state, timestamp):
         """
@@ -107,15 +142,12 @@ class Listener(object):
 
         :param pin_num: the pin number that changed
         :type pin_num: int
-        :param state: the new state of the pin (True for on, False for off)
-        :type state: bool
+        :param state: the new state of the pin (1==on, 0==off)
+        :type state: int
         :param timestamp: timestamp when the event happened (Float unix TS)
         :type timestamp: float
         """
-        state_name = 'off'
-        if state:
-            state_name = 'on'
-        fname = 'pinevent_%s_%s_%s' % (timestamp, pin_num, state_name)
+        fname = 'pinevent_%s_pin%s_state%s' % (timestamp, pin_num, state)
         fpath = os.path.join(settings.QUEUE_PATH, fname)
         if not self.write_files:
             logger.warning('Would create event file: %s', fpath)

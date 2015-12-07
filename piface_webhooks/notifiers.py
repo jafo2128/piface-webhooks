@@ -104,5 +104,5 @@ class Pushover(object):
         r = requests.post('https://api.pushover.net/1/messages.json', data=data)
         if r.status_code != 200:
             logger.critical("POST to Pushover returned %s", r.status_code)
-        if r.json['status'] != 1:
+        if r.json()['status'] != 1:
             logger.critical("POST to Pushover returned bad status: %s", r.json)

@@ -50,6 +50,11 @@ from piface_webhooks.config import Config
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger()
 
+# suppress requests internal logging below WARNING level
+requests_log = logging.getLogger("requests")
+requests_log.setLevel(logging.WARNING)
+requests_log.propagate = True
+
 
 class Worker(object):
 

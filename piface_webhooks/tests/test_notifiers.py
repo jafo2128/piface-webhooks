@@ -107,7 +107,7 @@ class TestPushover(object):
         with patch('%s.requests.post' % pbm) as mock_post:
             with patch('%s.logger' % pbm) as mock_logger:
                 type(mock_post.return_value).status_code = 200
-                type(mock_post.return_value).json = {'status': 1}
+                mock_post.return_value.json.return_value = {'status': 1}
                 self.cls._pushover_send('mymsg',
                                         datetime(2015, 2, 13, 1, 2, 3, 123456))
         assert mock_post.mock_calls == [
@@ -134,7 +134,7 @@ class TestPushover(object):
         with patch('%s.requests.post' % pbm) as mock_post:
             with patch('%s.logger' % pbm) as mock_logger:
                 type(mock_post.return_value).status_code = 200
-                type(mock_post.return_value).json = {'status': 1}
+                mock_post.return_value.json.return_value = {'status': 1}
                 self.cls._pushover_send('mymsg',
                                         datetime(2015, 2, 13, 1, 2, 3, 123456))
         assert mock_post.mock_calls == [
@@ -160,7 +160,7 @@ class TestPushover(object):
         with patch('%s.requests.post' % pbm) as mock_post:
             with patch('%s.logger' % pbm) as mock_logger:
                 type(mock_post.return_value).status_code = 401
-                type(mock_post.return_value).json = resp_json
+                mock_post.return_value.json.return_value = resp_json
                 self.cls._pushover_send('mymsg',
                                         datetime(2015, 2, 13, 1, 2, 3, 123456))
         assert mock_post.mock_calls == [

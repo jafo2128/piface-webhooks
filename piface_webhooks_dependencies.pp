@@ -59,7 +59,7 @@ exec {'make-virtualenv':
 # install the git clone in the virtualenv
 # this always runs, so that it updates any entry points
 exec {'install-package':
-  command => "${install_path}/bin/pip install --upgrade .",
+  command => "${install_path}/bin/python setup.py develop",
   cwd     => $install_path,
   user    => 'root',
 }

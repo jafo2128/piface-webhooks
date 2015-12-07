@@ -72,7 +72,6 @@ class Listener(object):
             self.listener.register(i, IODIR_OFF, self.handle_input_off)
         logger.debug("activating listener")
         self.listener.activate()
-        logger.warning("Listener exited")
 
     def handle_input_on(self, event):
         """

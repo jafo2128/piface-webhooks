@@ -208,8 +208,7 @@ class TestListener(object):
             call.debug('registering callback for %s OFF', 2),
             call.debug('registering callback for %s ON', 3),
             call.debug('registering callback for %s OFF', 3),
-            call.debug('activating listener'),
-            call.warning('Listener exited')
+            call.debug('activating listener')
         ]
         assert mock_listener.mock_calls == [
             call(chip=self.cls.chip),

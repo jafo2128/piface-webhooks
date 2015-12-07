@@ -95,7 +95,7 @@ class Listener(object):
         :param event: the event that was detected
         :type event: pifacecommon.interrupts.InterruptEvent
         """
-        logger.info("Received ON event for pin %s", event.pin_num)
+        logger.info("Received OFF event for pin %s", event.pin_num)
         self.handle_change(event.pin_num, False, event.timestamp)
         # now set the LED
         logger.debug("Setting output %s off", event.pin_num)

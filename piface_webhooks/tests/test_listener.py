@@ -255,7 +255,7 @@ class TestListener(object):
             with patch('%s.logger' % pbm) as mock_logger:
                 self.cls.handle_input_off(mock_evt)
         assert mock_logger.mock_calls == [
-            call.info("Received ON event for pin %s", 1),
+            call.info("Received OFF event for pin %s", 1),
             call.debug("Setting output %s off", 1),
             call.debug("Set output %s off", 1)
         ]

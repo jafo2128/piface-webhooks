@@ -56,6 +56,9 @@ class Listener(object):
 
     def __init__(self):
         logger.info("Initializing listener")
+        if len(settings.PINS) < 4:
+            logger.critical("ERROR - please configure all 4 pins")
+            raise SystemExit(1)
         self.write_files = True
         self.current_values = []
 

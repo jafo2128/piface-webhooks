@@ -41,3 +41,62 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 
 # path on disk used to store the queue files; this directory must exist
 QUEUE_PATH = '/var/spool/piface-webhooks'
+
+###########################
+# input pin configuration #
+###########################
+# Note that on the PiFace, output pins 0 and 1 have relays attached;
+# this program will light the output pin LEDs, which means that it
+# will trigger the relays for pins 0 and 1 unless the jumpers are
+# changed.
+
+PINS = [
+    # pin 0
+    {
+        # a name to give the pin in messages
+        'name': 'Pin 0',
+        # human-readable descriptions of the states, for use in the messages
+        'states': [
+            # state 0 - off
+            'off state text',
+            # state 1 - on
+            'on state text',
+        ],
+    },
+    # pin 1
+    {
+        # a name to give the pin in messages
+        'name': 'Pin 1',
+        # human-readable descriptions of the states, for use in the messages
+        'states': [
+            # state 0 - off
+            'off state text',
+            # state 1 - on
+            'on state text',
+        ],
+    },
+    # pin 2
+    {
+        # a name to give the pin in messages
+        'name': 'Pin 2',
+        # human-readable descriptions of the states, for use in the messages
+        'states': [
+            # state 0 - off
+            'off state text',
+            # state 1 - on
+            'on state text',
+        ],
+    },
+    # pin 3
+    {
+        # a name to give the pin in messages
+        'name': 'Pin 3',
+        # human-readable descriptions of the states, for use in the messages
+        'states': [
+            # state 0 - off
+            'off state text',
+            # state 1 - on
+            'on state text',
+        ],
+    },
+]

@@ -83,6 +83,11 @@ class TestInit(object):
         assert cls.write_files is True
         assert cls.current_values == []
 
+    def test_init_too_few_pins(self):
+        with patch('%s.settings.PINS' % pbm, [1]):
+            with pytest.raises(SystemExit):
+                Listener()
+
 
 class TestListener(object):
 

@@ -119,14 +119,6 @@ class TestListener(object):
             self.cls = Listener()
         self.cls.chip = self.mock_chip
 
-    def test_module_entry_point(self):
-        with patch(pb) as mock_listener:
-            console_entry_point()
-        assert mock_listener.mock_calls == [
-            call(),
-            call().console_entry_point(),
-        ]
-
     def test_parse_args(self):
         argv = ['-V']
         res = self.cls.parse_args(argv)
@@ -158,7 +150,7 @@ class TestListener(object):
         ]
 
     def test_entry_point_version(self, capsys):
-        argv = ['piface-webhooks', '-V']
+        argv = ['piface-listener', '-V']
         with patch.object(sys, 'argv', argv):
             with patch('%s.run' % pb) as mock_run:
                 with pytest.raises(SystemExit) as excinfo:
@@ -171,7 +163,7 @@ class TestListener(object):
         assert mock_run.mock_calls == []
 
     def test_entry_verbose(self, capsys):
-        argv = ['piface-webhooks', '-v']
+        argv = ['piface-listener', '-v']
         with patch.object(sys, 'argv', argv):
             with patch('%s.logger.setLevel' % pbm) as mock_set_level:
                 with patch('%s.run' % pb) as mock_run:
@@ -183,7 +175,7 @@ class TestListener(object):
         assert mock_run.mock_calls == [call()]
 
     def test_entry_debug(self, capsys):
-        argv = ['piface-webhooks', '-vv']
+        argv = ['piface-listener', '-vv']
         with patch.object(sys, 'argv', argv):
             with patch('%s.logger.setLevel' % pbm) as mock_set_level:
                 with patch('%s.run' % pb) as mock_run:
@@ -195,7 +187,7 @@ class TestListener(object):
         assert mock_run.mock_calls == [call()]
 
     def test_entry_none(self, capsys):
-        argv = ['piface-webhooks']
+        argv = ['piface-listener']
         with patch.object(sys, 'argv', argv):
             with patch('%s.logger.setLevel' % pbm) as mock_set_level:
                 with patch('%s.run' % pb) as mock_run:
@@ -208,7 +200,7 @@ class TestListener(object):
         assert self.cls.write_files is True
 
     def test_entry_no_write(self, capsys):
-        argv = ['piface-webhooks', '--no-write']
+        argv = ['piface-listener', '--no-write']
         with patch.object(sys, 'argv', argv):
             with patch('%s.logger.setLevel' % pbm) as mock_set_level:
                 with patch('%s.run' % pb) as mock_run:

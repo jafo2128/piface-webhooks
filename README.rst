@@ -6,10 +6,11 @@ Python script/daemon to read RPi PiFace inputs and run a webhook (or other callb
 Overview
 --------
 
-This package is made up of two components; the listner and the runner. Each one has a separate console
-entry point, and is intended to be run as a separate process/daemon. The listener listens to input pin
-change events from the PiFace, and creates files on disk (a simple disk-based queue) for every event.
-The runner finds these new files, and executes the configured tasks for each event, in order.
+This package is made up of two components; the listner and the worker. Each one has a separate console
+entry point, and is intended to be run as a separate process/daemon. The listener (``piface-listener``)
+listens to input pin change events from the PiFace, and creates files on disk (a simple disk-based queue)
+for every event. The worker (``piface-worker``) finds these new files, and executes the configured tasks
+for each event, in order.
 
 Installation
 -------------
@@ -25,7 +26,7 @@ install the project in ``/usr/local/piface-webhooks``.
 Configuration
 -------------
 
-TBD.
+Edit ``setup.py``.
 
 Simple Test/Foreground Operation
 ---------------------------------

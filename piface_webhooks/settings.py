@@ -100,3 +100,20 @@ PINS = [
         ],
     },
 ]
+
+###############################################
+# Callback/notification/webhook configuration #
+###############################################
+# You can use the builtin classes for this, or define your own
+# either here, or (ideally) anywhere that can be imported.
+# The CALLBACKS list is a list of callables, each of which will
+# be called with arguments as follows:
+# - event datetime (datetime)
+# - pin number (int)
+# - new pin state/value (int, 0 or 1)
+# - pin name (str)
+# - pin state text/description (str)
+
+push = Pushover('my_user_key')
+
+CALLBACKS = [push.send]

@@ -45,7 +45,8 @@ with open('README.rst') as file:
 
 requires = [
     'pifacedigitalio>=3.0.5',
-    'pifacecommon>=4.1.2'
+    'pifacecommon>=4.1.2',
+    'requests'
 ]
 
 classifiers = [

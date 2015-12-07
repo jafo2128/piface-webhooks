@@ -39,6 +39,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
+from piface_webhooks.notifiers import *
+
 # path on disk used to store the queue files; this directory must exist
 QUEUE_PATH = '/var/spool/piface-webhooks'
 

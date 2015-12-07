@@ -251,7 +251,8 @@ class TestListener(object):
             call.debug('registering callback for %s OFF', 2),
             call.debug('registering callback for %s ON', 3),
             call.debug('registering callback for %s OFF', 3),
-            call.debug('done registering callbacks')
+            call.debug('done registering callbacks'),
+            call.info('Initial pin states: %s', [10, 11, 12, 13])
         ]
         assert mock_listener.mock_calls == [
             call.register(0, IODIR_ON, self.cls.handle_input_on),

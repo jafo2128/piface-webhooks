@@ -81,6 +81,7 @@ class Listener(object):
             logger.debug("registering callback for %s OFF", i)
             self.listener.register(i, IODIR_OFF, self.handle_input_off)
         logger.debug("done registering callbacks")
+        logger.info("Initial pin states: %s", self.current_values)
 
     def handle_input_on(self, event):
         """

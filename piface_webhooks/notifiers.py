@@ -64,6 +64,8 @@ class Pushover(object):
         """
         Send a notification to the specified user via pushover.
 
+        This is the callback function.
+
         :param evt_datetime: the time the input changed state
         :type evt_datetime: datetime.datetime
         :param pin_num: the pin number that changed
@@ -104,5 +106,68 @@ class Pushover(object):
         r = requests.post('https://api.pushover.net/1/messages.json', data=data)
         if r.status_code != 200:
             logger.critical("POST to Pushover returned %s", r.status_code)
-        if r.json()['status'] != 1:
-            logger.critical("POST to Pushover returned bad status: %s", r.json)
+        try:
+            j = r.json()
+        except:
+            logger.critical("POST to Pushover - response could not be decoded")
+            return
+        if 'status' not in j:
+            logger.critical("POST to Pushover - response lacks status element")
+            return
+        if j['status'] != 1:
+            logger.critical("POST to Pushover returned bad status: %s", j)
+
+
+class Webhook(object):
+    """
+    Sends a webhook to the specified URL. Parameters are as follows:
+
+    timestamp - integer Unix timestamp for the event
+    datetime_iso8601 - string iso8601 time of the event ('%Y-%m-%dT%H:%m:%s%z')
+    pin_num - integer pin number
+    pin_name - string pin name
+    state - integer state
+    state_name - string state name
+    """
+
+    def __init__(self, url, use_get=False):
+        """
+        Sends a webhook to the URL. Will send a POST unless use_get is True.
+        """
+        self.url = url
+        self.use_get = use_get
+
+    def send(self, evt_datetime, pin_num, state, pin_name, state_name):
+        """
+        Sends the webhook.
+
+        This is the callback function.
+
+        :param evt_datetime: the time the input changed state
+        :type evt_datetime: datetime.datetime
+        :param pin_num: the pin number that changed
+        :type pin_num: int
+        :param state: the pin's new state (0==off, 1==on)
+        :type state: int
+        :param pin_name: pin name from the settings module
+        :type pin_name: str
+        :param state_name: state name from the settings module
+        :type state_name: str
+        """
+        data = {
+            'timestamp': int(time.mktime(evt_datetime.timetuple())),
+            'datetime_iso8601': evt_datetime.strftime('%Y-%m-%dT%H:%M:%S%z'),
+            'pin_num': pin_num,
+            'pin_name': pin_name,
+            'state': state,
+            'state_name': state_name
+        }
+        if self.use_get:
+            logger.debug("GETing %s with: %s", self.url, data)
+            res = requests.get(self.url, data=data)
+        else:
+            logger.debug("POSTing to %s: %s", self.url, data)
+            res = requests.post(self.url, data=data)
+        if res.status_code != 200:
+            logger.critical("Request to %s returned status code %s",
+                            self.url, res.status_code)

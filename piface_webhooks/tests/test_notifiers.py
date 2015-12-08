@@ -37,12 +37,10 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 ################################################################################
 """
 
-import pytest
 import sys
-import logging
 from datetime import datetime
 
-from piface_webhooks.notifiers import Pushover
+from piface_webhooks.notifiers import Pushover, Webhook
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -50,9 +48,9 @@ if (
         sys.version_info[0] < 3 or
         sys.version_info[0] == 3 and sys.version_info[1] < 4
 ):
-    from mock import patch, call, Mock
+    from mock import patch, call
 else:
-    from unittest.mock import patch, call, Mock
+    from unittest.mock import patch, call
 
 
 # patch base
@@ -111,7 +109,8 @@ class TestPushover(object):
                 self.cls._pushover_send('mymsg',
                                         datetime(2015, 2, 13, 1, 2, 3, 123456))
         assert mock_post.mock_calls == [
-            call('https://api.pushover.net/1/messages.json', data=expected)
+            call('https://api.pushover.net/1/messages.json', data=expected),
+            call().json()
         ]
         assert mock_logger.mock_calls == [
             call.debug("Sending POST to Pushover; data: %s", expected)
@@ -138,7 +137,8 @@ class TestPushover(object):
                 self.cls._pushover_send('mymsg',
                                         datetime(2015, 2, 13, 1, 2, 3, 123456))
         assert mock_post.mock_calls == [
-            call('https://api.pushover.net/1/messages.json', data=expected)
+            call('https://api.pushover.net/1/messages.json', data=expected),
+            call().json()
         ]
         assert mock_logger.mock_calls == [
             call.debug("Sending POST to Pushover; data: %s", expected)
@@ -164,10 +164,150 @@ class TestPushover(object):
                 self.cls._pushover_send('mymsg',
                                         datetime(2015, 2, 13, 1, 2, 3, 123456))
         assert mock_post.mock_calls == [
-            call('https://api.pushover.net/1/messages.json', data=expected)
+            call('https://api.pushover.net/1/messages.json', data=expected),
+            call().json()
         ]
         assert mock_logger.mock_calls == [
             call.debug("Sending POST to Pushover; data: %s", expected),
             call.critical("POST to Pushover returned %s", 401),
             call.critical("POST to Pushover returned bad status: %s", resp_json)
+        ]
+
+    def test_pushover_cant_decode_json(self):
+        expected = {
+            'user': 'mykey',
+            'timestamp': 1423807323,
+            'title': 'piface input change',
+            'token': 'aB5D3uoGZuVQg4QMJMm8817sJFn7Up',
+            'message': 'mymsg',
+            'priority': 0
+        }
+
+        def se_exc():
+            raise Exception("foo")
+
+        with patch('%s.requests.post' % pbm) as mock_post:
+            with patch('%s.logger' % pbm) as mock_logger:
+                type(mock_post.return_value).status_code = 200
+                mock_post.return_value.json.side_effect = se_exc
+                self.cls._pushover_send('mymsg',
+                                        datetime(2015, 2, 13, 1, 2, 3, 123456))
+        assert mock_post.mock_calls == [
+            call('https://api.pushover.net/1/messages.json', data=expected),
+            call().json()
+        ]
+        assert mock_logger.mock_calls == [
+            call.debug("Sending POST to Pushover; data: %s", expected),
+            call.critical("POST to Pushover - response could not be decoded")
+        ]
+
+    def test_pushover_no_status(self):
+        expected = {
+            'user': 'mykey',
+            'timestamp': 1423807323,
+            'title': 'piface input change',
+            'token': 'aB5D3uoGZuVQg4QMJMm8817sJFn7Up',
+            'message': 'mymsg',
+            'priority': 0
+        }
+        resp_json = {
+            'foo': 'bar'
+        }
+        with patch('%s.requests.post' % pbm) as mock_post:
+            with patch('%s.logger' % pbm) as mock_logger:
+                type(mock_post.return_value).status_code = 200
+                mock_post.return_value.json.return_value = resp_json
+                self.cls._pushover_send('mymsg',
+                                        datetime(2015, 2, 13, 1, 2, 3, 123456))
+        assert mock_post.mock_calls == [
+            call('https://api.pushover.net/1/messages.json', data=expected),
+            call().json()
+        ]
+        assert mock_logger.mock_calls == [
+            call.debug("Sending POST to Pushover; data: %s", expected),
+            call.critical("POST to Pushover - response lacks status element")
+        ]
+
+
+class TestWebhook(object):
+
+    def setup(self):
+        self.cls = Webhook('myurl')
+
+    def test_init(self):
+        cls = Webhook('myurl')
+        assert cls.url == 'myurl'
+        assert cls.use_get is False
+
+    def test_init_get(self):
+        cls = Webhook('myurl', use_get=True)
+        assert cls.url == 'myurl'
+        assert cls.use_get is True
+
+    def test_send(self):
+        dt = datetime(2015, 2, 13, 1, 2, 3, 123456)
+        expected = {
+            'timestamp': 1423807323,
+            'datetime_iso8601': '2015-02-13T01:02:03',
+            'pin_num': 2,
+            'pin_name': 'pin2',
+            'state': 0,
+            'state_name': 'state0name',
+        }
+        with patch('%s.requests.post' % pbm) as mock_post:
+            with patch('%s.requests.get' % pbm) as mock_get:
+                with patch('%s.logger' % pbm) as mock_logger:
+                    type(mock_post.return_value).status_code = 200
+                    type(mock_get.return_value).status_code = 200
+                    self.cls.send(dt, 2, 0, 'pin2', 'state0name')
+        assert mock_get.mock_calls == []
+        assert mock_post.mock_calls == [call('myurl', data=expected)]
+        assert mock_logger.mock_calls == [
+            call.debug('POSTing to %s: %s', 'myurl', expected)
+        ]
+
+    def test_send_error(self):
+        dt = datetime(2015, 2, 13, 1, 2, 3, 123456)
+        expected = {
+            'timestamp': 1423807323,
+            'datetime_iso8601': '2015-02-13T01:02:03',
+            'pin_num': 2,
+            'pin_name': 'pin2',
+            'state': 0,
+            'state_name': 'state0name',
+        }
+        with patch('%s.requests.post' % pbm) as mock_post:
+            with patch('%s.requests.get' % pbm) as mock_get:
+                with patch('%s.logger' % pbm) as mock_logger:
+                    type(mock_post.return_value).status_code = 401
+                    type(mock_get.return_value).status_code = 401
+                    self.cls.send(dt, 2, 0, 'pin2', 'state0name')
+        assert mock_get.mock_calls == []
+        assert mock_post.mock_calls == [call('myurl', data=expected)]
+        assert mock_logger.mock_calls == [
+            call.debug('POSTing to %s: %s', 'myurl', expected),
+            call.critical("Request to %s returned status code %s", 'myurl', 401)
+        ]
+
+    def test_send_get(self):
+        dt = datetime(2015, 2, 13, 1, 2, 3, 123456)
+        expected = {
+            'timestamp': 1423807323,
+            'datetime_iso8601': '2015-02-13T01:02:03',
+            'pin_num': 2,
+            'pin_name': 'pin2',
+            'state': 0,
+            'state_name': 'state0name',
+        }
+        self.cls.use_get = True
+        with patch('%s.requests.post' % pbm) as mock_post:
+            with patch('%s.requests.get' % pbm) as mock_get:
+                with patch('%s.logger' % pbm) as mock_logger:
+                    type(mock_post.return_value).status_code = 200
+                    type(mock_get.return_value).status_code = 200
+                    self.cls.send(dt, 2, 0, 'pin2', 'state0name')
+        assert mock_post.mock_calls == []
+        assert mock_get.mock_calls == [call('myurl', data=expected)]
+        assert mock_logger.mock_calls == [
+            call.debug('GETing %s with: %s', 'myurl', expected)
         ]

@@ -3,6 +3,7 @@ branch = True
 omit = lib/*
        piface_webhooks/tests/*
        setup.py
+       piface_webhooks/settings.py
 
 [report]
 exclude_lines =

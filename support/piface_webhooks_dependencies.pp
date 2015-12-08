@@ -91,7 +91,7 @@ file {'piface-listener.service':
   notify  => Exec['systemd-reload'],
 }
 
-service {'piface-listener.service':
+service {'piface-listener':
   ensure  => running,
   enable  => true,
   require => [Exec['systemd-reload'], File['piface-listener.service']],
@@ -109,7 +109,7 @@ file {'piface-worker.service':
   notify  => Exec['systemd-reload'],
 }
 
-service {'piface-worker.service':
+service {'piface-worker':
   ensure  => running,
   enable  => true,
   require => [Exec['systemd-reload'], File['piface-worker.service']],

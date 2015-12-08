@@ -68,4 +68,4 @@ if ! lsmod | grep spi_bcm2708; then
     exit 1
 fi
 
-puppet apply -t piface_webhooks_dependencies.pp
+puppet apply -t ${INSTALL_PATH}/support/piface_webhooks_dependencies.pp

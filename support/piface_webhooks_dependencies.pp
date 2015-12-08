@@ -91,10 +91,21 @@ file {'piface-listener.service':
   notify  => Exec['systemd-reload'],
 }
 
+file {'piface-listener.default':
+  ensure  => present,
+  owner   => 'root',
+  group   => 'root',
+  mode    => '0644',
+  path    => '/etc/default/piface-listener',
+  content => "PIFACE_LISTENER_OPTS=''",
+  replace => false,
+  notify  => Exec['systemd-reload'],
+}
+
 service {'piface-listener':
   ensure  => running,
   enable  => true,
-  require => [Exec['systemd-reload'], File['piface-listener.service']],
+  require => [Exec['systemd-reload'], File['piface-listener.service'], File['piface-listener.default']],
 }
 
 file {'piface-worker.service':
@@ -109,8 +120,19 @@ file {'piface-worker.service':
   notify  => Exec['systemd-reload'],
 }
 
+file {'piface-worker.default':
+  ensure  => present,
+  owner   => 'root',
+  group   => 'root',
+  mode    => '0644',
+  path    => '/etc/default/piface-worker',
+  content => "PIFACE_WORKER_OPTS=''",
+  replace => false,
+  notify  => Exec['systemd-reload'],
+}
+
 service {'piface-worker':
   ensure  => running,
   enable  => true,
-  require => [Exec['systemd-reload'], File['piface-worker.service']],
+  require => [Exec['systemd-reload'], File['piface-worker.service'], File['piface-worker.default']],
 }

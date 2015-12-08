@@ -24,7 +24,7 @@ install the project in ``/usr/local/piface-webhooks``.
 4. Configure per the instructions below.
 5. ``systemctl restart piface-listener; systemctl restart piface-worker`` to reload the new configuration.
 
-If you want to pass options to the scripts, you can do so by creating ``/etc/default/piface-listener`` or ``/etc/default/piface-worker`` (respectively)
+If you want to pass options to the scripts, you can do so by editing ``/etc/default/piface-listener`` or ``/etc/default/piface-worker`` (respectively)
 and placing in the content of the file, ``PIFACE_LISTENER_OPTS="<command line options here>"`` or ``PIFACE_WORKER_OPTS="<command line options here>"``.
 
 Configuration

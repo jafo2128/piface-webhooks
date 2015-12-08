@@ -20,8 +20,12 @@ install the project in ``/usr/local/piface-webhooks``.
 
 1. ``apt-get update && apt-get install -y puppet git``
 2. ``cd /usr/local && git clone https://github.com/jantman/piface-webhooks.git && cd piface-webhooks``
-3. ``./puppetize.sh`` - this will use Puppet to install the system-wide dependencies and setup the project. If you don't want to use Puppet, the script and Puppet manifests are commented (to reproduce their actions manually, if you want). Note that I had some problems on my test system with ``virtualenv`` not installing. If you experience failures, ``apt-get install -y virtualenv`` and then run ``./puppetize.sh`` again.
-4. Install your favorite text editor and edit ``piface-webhooks/settings.py``.
+3. ``./support/puppetize.sh`` - this will use Puppet to install the system-wide dependencies and setup the project. If you don't want to use Puppet, the script and Puppet manifests are commented (to reproduce their actions manually, if you want). Note that I had some problems on my test system with ``virtualenv`` not installing. If you experience failures, ``apt-get install -y virtualenv`` and then run ``./puppetize.sh`` again.
+4. Configure per the instructions below.
+5. ``systemctl restart piface-listener; systemctl restart piface-worker`` to reload the new configuration.
+
+If you want to pass options to the scripts, you can do so by creating ``/etc/default/piface-listener`` or ``/etc/default/piface-worker`` (respectively)
+and placing in the content of the file, ``PIFACE_LISTENER_OPTS="<command line options here>"`` or ``PIFACE_WORKER_OPTS="<command line options here>"``.
 
 Configuration
 -------------

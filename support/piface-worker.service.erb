@@ -1,0 +1,20 @@
+# This file is managed by Puppet and local changes
+# may be overwritten. This is managed by
+# <%= @install_path %>/support/piface_webhooks_dependencies.pp
+# source: <https://github.com/jantman/piface-webhooks>
+
+[Unit]
+Description=piface-worker PiFace worker daemon
+
+[Service]
+Restart=always
+StartLimitInterval=20
+StartLimitBurst=5
+TimeoutStartSec=0
+Environment="HOME=/root" "PATH=<%= @install_path %>/bin" "VIRTUAL_ENV=<%= @install_path %>"
+EnvironmentFile=/etc/default/piface-worker
+ExecStart=<%= @install_path %>/bin/piface-worker "$PIFACE_WORKER_OPTS"
+WorkingDirectory=<%= @install_path %>
+
+[Install]
+WantedBy=multi-user.target

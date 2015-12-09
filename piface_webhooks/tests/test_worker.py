@@ -251,6 +251,44 @@ class TestWorker(object):
             call('/foo/bar/pinevent_1420863326.123456_pin3_state0')
         ]
 
+    def test_handle_files_keyboard_interrupt(self):
+        flist = [
+            'pinevent_1420863332.123456_pin2_state1',
+            'pinevent_1420863326.123456_pin3_state0',
+        ]
+
+        def se_handle(fname, evt_datetime, pin, state):
+            if fname == 'pinevent_1420863332.123456_pin2_state1':
+                raise KeyboardInterrupt
+
+        type(self.config).QUEUE_PATH = '/foo/bar'
+
+        with patch('%s.logger' % pbm) as mock_logger:
+            with patch('%s.os.listdir' % pbm) as mock_listdir:
+                with patch('%s.handle_one_file' % pb) as mock_handle:
+                    with patch('%s.os.unlink' % pbm) as mock_unlink:
+                        mock_listdir.return_value = flist
+                        mock_handle.side_effect = se_handle
+                        with pytest.raises(KeyboardInterrupt):
+                            self.cls.handle_files()
+        assert mock_logger.mock_calls == [
+            call.info("Found %d new events", 2),
+            call.debug('File handled; removing: %s',
+                       'pinevent_1420863326.123456_pin3_state0'),
+        ]
+        assert mock_listdir.mock_calls == [call('/foo/bar')]
+        assert mock_handle.mock_calls == [
+            call('pinevent_1420863326.123456_pin3_state0',
+                 datetime(2015, 1, 9, 23, 15, 26, 123456),
+                 3, 0),
+            call('pinevent_1420863332.123456_pin2_state1',
+                 datetime(2015, 1, 9, 23, 15, 32, 123456),
+                 2, 1),
+        ]
+        assert mock_unlink.mock_calls == [
+            call('/foo/bar/pinevent_1420863326.123456_pin3_state0'),
+        ]
+
     def test_handle_files_none(self):
         flist = [
             'foobar',
@@ -299,6 +337,46 @@ class TestWorker(object):
             call.debug("Running callback: %s", mock_cb2),
             call.exception("Callback raised an exception."),
             call.debug("All callbacks finished.")
+        ]
+        assert mock_cb1.mock_calls == [
+            call(datetime(2015, 2, 13, 1, 2, 3, 123456), 2, 0, 'pin2',
+                 'pin2state0')
+        ]
+        assert mock_cb2.mock_calls == [
+            call(datetime(2015, 2, 13, 1, 2, 3, 123456), 2, 0, 'pin2',
+                 'pin2state0')
+        ]
+
+    def test_handle_one_file_keyboard_interrupt(self):
+
+        def se_exc(*argv):
+            raise KeyboardInterrupt()
+
+        mock_cb1 = Mock()
+        mock_cb2 = Mock()
+        mock_cb2.side_effect = se_exc
+        cbs = [mock_cb1, mock_cb2]
+
+        pins = [
+            {'name': 'pin0', 'states': ['pin0state0', 'pin0state1']},
+            {'name': 'pin1', 'states': ['pin1state0', 'pin1state1']},
+            {'name': 'pin2', 'states': ['pin2state0', 'pin2state1']},
+            {'name': 'pin3', 'states': ['pin3state0', 'pin3state1']},
+        ]
+
+        type(self.config).CALLBACKS = cbs
+        type(self.config).PINS = pins
+
+        with patch('%s.logger' % pbm) as mock_logger:
+            with pytest.raises(KeyboardInterrupt):
+                self.cls.handle_one_file(
+                    'myfname', datetime(2015, 2, 13, 1, 2, 3, 123456), 2, 0)
+        assert mock_logger.mock_calls == [
+            call.debug("Handling event: pin=%d state=%d dt=%s (%s)",
+                       2, 0, datetime(2015, 2, 13, 1, 2, 3, 123456), 'myfname'),
+            call.debug("Running callback: %s", mock_cb1),
+            call.debug("Callback finished"),
+            call.debug("Running callback: %s", mock_cb2),
         ]
         assert mock_cb1.mock_calls == [
             call(datetime(2015, 2, 13, 1, 2, 3, 123456), 2, 0, 'pin2',

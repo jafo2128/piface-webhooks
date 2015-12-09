@@ -90,7 +90,9 @@ class Worker(object):
                 self.handle_one_file(fname, event[0], event[1], event[2])
                 logger.debug("File handled; removing: %s", fname)
                 os.unlink(os.path.join(self.config.QUEUE_PATH, fname))
-            except:
+            except KeyboardInterrupt as ex:
+                raise ex
+            except Exception as ex:
                 logger.exception("Execption while handling event file %s",
                                  fname)
 
@@ -103,7 +105,9 @@ class Worker(object):
                 cb(evt_datetime, pin, state, self.config.PINS[pin]['name'],
                    self.config.PINS[pin]['states'][state])
                 logger.debug("Callback finished")
-            except:
+            except KeyboardInterrupt as ex:
+                raise ex
+            except Exception as ex:
                 logger.exception("Callback raised an exception.")
         logger.debug("All callbacks finished.")
 

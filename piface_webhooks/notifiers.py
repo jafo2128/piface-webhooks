@@ -173,6 +173,8 @@ class Webhook(object):
         if res.status_code != 200:
             logger.critical("Request to %s returned status code %s",
                             self.url, res.status_code)
+            return
+        logger.debug("Request received status code %s", res.status_code)
 
 
 class Gmail(object):

@@ -263,7 +263,8 @@ class TestWebhook(object):
         assert mock_get.mock_calls == []
         assert mock_post.mock_calls == [call('myurl', data=expected)]
         assert mock_logger.mock_calls == [
-            call.debug('POSTing to %s: %s', 'myurl', expected)
+            call.debug('POSTing to %s: %s', 'myurl', expected),
+            call.debug('Request received status code %s', 200)
         ]
 
     def test_send_error(self):
@@ -309,7 +310,8 @@ class TestWebhook(object):
         assert mock_post.mock_calls == []
         assert mock_get.mock_calls == [call('myurl', data=expected)]
         assert mock_logger.mock_calls == [
-            call.debug('GETing %s with: %s', 'myurl', expected)
+            call.debug('GETing %s with: %s', 'myurl', expected),
+            call.debug('Request received status code %s', 200)
         ]
 
 

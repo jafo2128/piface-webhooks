@@ -261,7 +261,33 @@ class TestWebhook(object):
                     type(mock_get.return_value).status_code = 200
                     self.cls.send(dt, 2, 0, 'pin2', 'state0name')
         assert mock_get.mock_calls == []
-        assert mock_post.mock_calls == [call('myurl', data=expected)]
+        assert mock_post.mock_calls == [
+            call('myurl', data=expected, timeout=10)
+        ]
+        assert mock_logger.mock_calls == [
+            call.debug('POSTing to %s: %s', 'myurl', expected),
+            call.debug('Request received status code %s', 200)
+        ]
+
+    def test_send_timeout(self):
+        dt = datetime(2015, 2, 13, 1, 2, 3, 123456)
+        expected = {
+            'timestamp': 1423807323,
+            'datetime_iso8601': '2015-02-13T01:02:03',
+            'pin_num': 2,
+            'pin_name': 'pin2',
+            'state': 0,
+            'state_name': 'state0name',
+        }
+        self.cls.timeout = 2
+        with patch('%s.requests.post' % pbm) as mock_post:
+            with patch('%s.requests.get' % pbm) as mock_get:
+                with patch('%s.logger' % pbm) as mock_logger:
+                    type(mock_post.return_value).status_code = 200
+                    type(mock_get.return_value).status_code = 200
+                    self.cls.send(dt, 2, 0, 'pin2', 'state0name')
+        assert mock_get.mock_calls == []
+        assert mock_post.mock_calls == [call('myurl', data=expected, timeout=2)]
         assert mock_logger.mock_calls == [
             call.debug('POSTing to %s: %s', 'myurl', expected),
             call.debug('Request received status code %s', 200)
@@ -284,7 +310,9 @@ class TestWebhook(object):
                     type(mock_get.return_value).status_code = 401
                     self.cls.send(dt, 2, 0, 'pin2', 'state0name')
         assert mock_get.mock_calls == []
-        assert mock_post.mock_calls == [call('myurl', data=expected)]
+        assert mock_post.mock_calls == [
+            call('myurl', data=expected, timeout=10)
+        ]
         assert mock_logger.mock_calls == [
             call.debug('POSTing to %s: %s', 'myurl', expected),
             call.critical("Request to %s returned status code %s", 'myurl', 401)
@@ -308,7 +336,7 @@ class TestWebhook(object):
                     type(mock_get.return_value).status_code = 200
                     self.cls.send(dt, 2, 0, 'pin2', 'state0name')
         assert mock_post.mock_calls == []
-        assert mock_get.mock_calls == [call('myurl', data=expected)]
+        assert mock_get.mock_calls == [call('myurl', data=expected, timeout=10)]
         assert mock_logger.mock_calls == [
             call.debug('GETing %s with: %s', 'myurl', expected),
             call.debug('Request received status code %s', 200)

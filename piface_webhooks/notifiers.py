@@ -132,12 +132,13 @@ class Webhook(object):
     state_name - string state name
     """
 
-    def __init__(self, url, use_get=False):
+    def __init__(self, url, use_get=False, timeout=10):
         """
         Sends a webhook to the URL. Will send a POST unless use_get is True.
         """
         self.url = url
         self.use_get = use_get
+        self.timeout = timeout
 
     def send(self, evt_datetime, pin_num, state, pin_name, state_name):
         """
@@ -166,10 +167,10 @@ class Webhook(object):
         }
         if self.use_get:
             logger.debug("GETing %s with: %s", self.url, data)
-            res = requests.get(self.url, data=data)
+            res = requests.get(self.url, data=data, timeout=self.timeout)
         else:
             logger.debug("POSTing to %s: %s", self.url, data)
-            res = requests.post(self.url, data=data)
+            res = requests.post(self.url, data=data, timeout=self.timeout)
         if res.status_code != 200:
             logger.critical("Request to %s returned status code %s",
                             self.url, res.status_code)

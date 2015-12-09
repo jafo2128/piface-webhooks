@@ -40,6 +40,8 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import logging
 import time
 import requests
+import smtplib
+from email.mime.text import MIMEText
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger()
@@ -171,3 +173,54 @@ class Webhook(object):
         if res.status_code != 200:
             logger.critical("Request to %s returned status code %s",
                             self.url, res.status_code)
+
+
+class Gmail(object):
+    """
+    Sends a notification via GMail.
+    """
+
+    def __init__(self, to_addr, from_addr, username, password):
+        self.to_addr = to_addr
+        self.from_addr = from_addr
+        self.username = username
+        self.password = password
+
+    def send(self, evt_datetime, pin_num, state, pin_name, state_name):
+        """
+        Sends the email.
+
+        This is the callback function.
+
+        :param evt_datetime: the time the input changed state
+        :type evt_datetime: datetime.datetime
+        :param pin_num: the pin number that changed
+        :type pin_num: int
+        :param state: the pin's new state (0==off, 1==on)
+        :type state: int
+        :param pin_name: pin name from the settings module
+        :type pin_name: str
+        :param state_name: state name from the settings module
+        :type state_name: str
+        """
+        subj = '%s (%s) changed to %s (%s) at %s' % (
+            pin_name, pin_num, state_name, state,
+            evt_datetime.strftime('%Y-%m-%dT%H:%M:%S%z')
+        )
+        msg = "%s\n%s (%s) changed state to %s (%s)" % (
+            evt_datetime.strftime('%Y-%m-%dT%H:%M:%S%z'),
+            pin_name, pin_num, state_name, state
+        )
+        self._send_gmail(subj, msg)
+
+    def _send_gmail(self, subject, body):
+        """Send email using GMail"""
+        msg = MIMEText(body)
+        msg['Subject'] = subject
+        msg['From'] = self.from_addr
+        msg['To'] = self.to_addr
+        s = smtplib.SMTP('smtp.gmail.com:587')
+        s.starttls()
+        s.login(self.username, self.password)
+        s.sendmail(self.from_addr, [self.to_addr], msg.as_string())
+        s.quit()

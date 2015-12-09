@@ -40,7 +40,7 @@ Jason Antman <jason@jasonantman.com> <http://www.jasonantman.com>
 import sys
 from datetime import datetime
 
-from piface_webhooks.notifiers import Pushover, Webhook
+from piface_webhooks.notifiers import Pushover, Webhook, Gmail
 
 # https://code.google.com/p/mock/issues/detail?id=249
 # py>=3.4 should use unittest.mock not the mock package on pypi
@@ -310,4 +310,42 @@ class TestWebhook(object):
         assert mock_get.mock_calls == [call('myurl', data=expected)]
         assert mock_logger.mock_calls == [
             call.debug('GETing %s with: %s', 'myurl', expected)
+        ]
+
+
+class TestGmail(object):
+
+    def setup(self):
+        self.cls = Gmail('to@a.com', 'from@a.com', 'myuser', 'mypass')
+
+    def test_init(self):
+        cls = Gmail('t', 'f', 'u', 'p')
+        assert cls.to_addr == 't'
+        assert cls.from_addr == 'f'
+        assert cls.username == 'u'
+        assert cls.password == 'p'
+
+    def test_send(self):
+        dt = datetime(2015, 2, 13, 1, 2, 3, 123456)
+        with patch('%s.Gmail._send_gmail' % pbm) as mock_send:
+            self.cls.send(dt, 1, 0, 'pin1', 'state0')
+        assert mock_send.mock_calls == [
+            call(
+                'pin1 (1) changed to state0 (0) at 2015-02-13T01:02:03',
+                "2015-02-13T01:02:03\npin1 (1) changed state to state0 (0)"
+            )
+        ]
+
+    def test_send_gmail(self):
+        msg = 'Content-Type: text/plain; charset="us-ascii"\nMIME-Version: ' \
+              '1.0\nContent-Transfer-Encoding: 7bit\nSubject: mysubj\nFrom: ' \
+              'from@a.com\nTo: to@a.com\n\nmy\nbody'
+        with patch('%s.smtplib.SMTP' % pbm, autospec=True) as mock_smtp:
+            self.cls._send_gmail('mysubj', "my\nbody")
+        assert mock_smtp.mock_calls == [
+            call('smtp.gmail.com:587'),
+            call().starttls(),
+            call().login('myuser', 'mypass'),
+            call().sendmail('from@a.com', ['to@a.com'], msg),
+            call().quit()
         ]

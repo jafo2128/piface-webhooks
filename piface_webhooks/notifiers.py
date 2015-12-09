@@ -79,8 +79,10 @@ class Pushover(object):
         :param state_name: state name from the settings module
         :type state_name: str
         """
-        msg = '%s (%s) changed to %s (%s)' % (pin_name, pin_num,
-                                              state_name, state)
+        msg = '%s (%s) changed to %s (%s) at %s' % (
+            pin_name, pin_num, state_name, state,
+            evt_datetime.strftime('%Y-%m-%dT%H:%M:%S%z')
+        )
         self._pushover_send(msg, evt_datetime)
 
     def _pushover_send(self, msg, evt_datetime):

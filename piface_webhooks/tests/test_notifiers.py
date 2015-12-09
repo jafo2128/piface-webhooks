@@ -89,7 +89,7 @@ class TestPushover(object):
             self.cls.send(datetime(2015, 2, 13, 1, 2, 3, 123456),
                           2, 0, 'pin2', 'pin2state0')
         assert mock_p_send.mock_calls == [
-            call('pin2 (2) changed to pin2state0 (0)',
+            call('pin2 (2) changed to pin2state0 (0) at 2015-02-13T01:02:03',
                  datetime(2015, 2, 13, 1, 2, 3, 123456))
         ]
 

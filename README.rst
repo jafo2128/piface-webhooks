@@ -1,6 +1,10 @@
 piface-webhooks
 ===============
 
+.. image:: http://www.repostatus.org/badges/latest/active.svg
+   :alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
+   :target: http://www.repostatus.org/#active
+
 Python script/daemon to read RPi PiFace inputs and run a webhook (or other callback) when they change.
 
 Overview
